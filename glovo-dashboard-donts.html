@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DONTS — Dashboard Glovo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:#0A0A0F;color:#E8E6DF;min-height:100vh}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0A0A0F}::-webkit-scrollbar-thumb{background:#2A2A3A;border-radius:3px}
+button{font-family:'DM Sans',sans-serif}
+.hdr{background:linear-gradient(135deg,#14141F 0%,#1A1A2E 100%);border-bottom:1px solid #2A2A3A;padding:20px 32px}
+.hdr-inner{display:flex;justify-content:space-between;align-items:center;max-width:1400px;margin:0 auto;flex-wrap:wrap;gap:12px}
+.logo-wrap{display:flex;align-items:center;gap:12px}
+.logo-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#E85D04,#FFBA08);display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-weight:700;font-size:18px;color:#0A0A0F}
+.logo-title{font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#FFF}
+.logo-sub{font-size:12px;color:#6B6B7B;font-family:'Space Mono',monospace}
+.hdr-right{text-align:right}
+.hdr-right p{font-size:13px;font-family:'Space Mono',monospace;color:#9B9BAB}
+.hdr-right .sub{font-size:12px;color:#6B6B7B}
+.container{max-width:1400px;margin:0 auto;padding:24px 32px}
+/* Upload */
+.upload-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:16px 20px;background:#14141F;border-radius:12px;border:1px solid #1E1E2E;flex-wrap:wrap}
+.upload-bar label{cursor:pointer;padding:8px 16px;border-radius:8px;background:linear-gradient(135deg,#E85D04,#FFBA08);color:#0A0A0F;font-weight:700;font-size:12px;transition:all .2s}
+.upload-bar label:hover{opacity:.85}
+.upload-bar input{display:none}
+.upload-bar .info{font-size:12px;color:#6B6B7B;flex:1}
+.upload-bar .sync{font-size:11px;color:#06D6A0;font-family:'Space Mono',monospace}
+.file-chips{display:flex;flex-wrap:wrap;gap:4px}
+.file-chip{display:inline-flex;align-items:center;gap:4px;background:#0A0A0F;border:1px solid #2A2A3A;border-radius:6px;padding:4px 10px;font-size:11px;color:#9B9BAB}
+.file-chip.ok{border-color:#06D6A030;color:#06D6A0}
+.file-chip.err{border-color:#EF476F30;color:#EF476F}
+.file-chip .x{cursor:pointer;color:#6B6B7B;margin-left:2px}.file-chip .x:hover{color:#EF476F}
+/* Selectors */
+.sel-row{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.sel-row.stores{gap:8px;margin-bottom:28px}
+.wk-btn{padding:8px 16px;border-radius:8px;border:1px solid #2A2A3A;background:#14141F;color:#6B6B7B;font-size:12px;cursor:pointer;font-weight:600;transition:all .2s;text-align:center}
+.wk-btn:hover{border-color:#E85D04;color:#E8E6DF}
+.wk-btn.active{background:#E85D0412;border:2px solid #E85D04;color:#E85D04}
+.wk-btn.month.active{background:#FFBA0815;border:2px solid #FFBA08;color:#FFBA08}
+.wk-btn .rng{font-size:10px;font-family:'Space Mono',monospace;margin-top:2px;display:block}
+.st-btn{padding:10px 20px;border-radius:10px;border:1px solid #2A2A3A;background:#14141F;color:#6B6B7B;font-size:13px;cursor:pointer;font-weight:600;transition:all .2s;display:flex;align-items:center;gap:8px}
+.st-btn .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.tab-row{display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid #1E1E2E}
+.tab-btn{padding:10px 20px;background:none;border:none;border-bottom:2px solid transparent;color:#6B6B7B;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
+.tab-btn:hover{color:#E8E6DF}
+.tab-btn.active{border-bottom-color:#E85D04;color:#E8E6DF}
+/* Layout */
+.kpi-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.kpi{flex:1;min-width:150px;background:#14141F;border-radius:12px;padding:18px 20px;border:1px solid #1E1E2E}
+.kpi .lb{font-size:10px;color:#6B6B7B;text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:6px}
+.kpi .vl{font-size:22px;font-weight:700;font-family:'Space Mono',monospace;letter-spacing:-.02em}
+.kpi .sb{font-size:11px;color:#6B6B7B;margin-top:4px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+.card{background:#14141F;border-radius:12px;padding:24px;border:1px solid #1E1E2E;margin-bottom:16px}
+.card h3{font-size:14px;font-weight:600;margin-bottom:16px;color:#9B9BAB}
+.acard{background:linear-gradient(135deg,#2A1215 0%,#14141F 100%);border:1px solid #3A1520}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+.chart-box{position:relative;height:260px}
+.chart-box.tall{height:300px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:10px 12px;text-align:left;color:#6B6B7B;font-weight:500;text-transform:uppercase;font-size:10px;letter-spacing:.05em;border-bottom:1px solid #2A2A3A}
+td{padding:10px 12px;border-bottom:1px solid #1E1E2E}
+.mono{font-family:'Space Mono',monospace}
+.rk-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+.rk-bar-bg{flex:1;background:#1A1A2E;border-radius:4px;height:20px;overflow:hidden}
+.rk-bar{height:100%;border-radius:4px}
+.wf-row{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.wf-label{font-size:11px;width:200px}
+.wf-bar-bg{flex:1;background:#1A1A2E;border-radius:4px;height:22px;overflow:hidden}
+.wf-bar{height:100%;border-radius:4px}
+.store-card{background:#14141F;border-radius:12px;padding:20px;cursor:pointer;transition:all .2s}
+.store-card:hover{transform:translateY(-2px)}
+.store-card .row{display:flex;justify-content:space-between;font-size:11px;color:#6B6B7B;margin-bottom:6px}
+.footer{border-top:1px solid #1E1E2E;padding:16px 32px;margin-top:40px;text-align:center}
+.footer p{font-size:11px;color:#4A4A5A;font-family:'Space Mono',monospace}
+.hidden{display:none}
+input[type="date"]{-webkit-appearance:none;appearance:none}
+input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(0.7);cursor:pointer;padding:2px}
+@media(max-width:900px){.g2,.g21,.g4{grid-template-columns:1fr}.g3{grid-template-columns:1fr 1fr}.container{padding:16px}}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-inner">
+    <div class="logo-wrap">
+      <div class="logo-icon">D</div>
+      <div><div class="logo-title">DONTS × Glovo</div><div class="logo-sub" id="hdrSub">Dashboard Fatture · 4 Store</div></div>
+    </div>
+    <div class="hdr-right"><p id="hdrInfo">Caricamento...</p><p class="sub" id="hdrPeriod"></p></div>
+  </div>
+</div>
+<div class="container">
+  <!-- Upload Bar -->
+  <div class="upload-bar">
+    <label>📂 Carica CSV <input type="file" id="fileInput" multiple accept=".csv"></label>
+    <button onclick="toggleDeleteMode()" id="btnDelete" style="padding:8px 16px;border-radius:8px;border:1px solid #EF476F40;background:transparent;color:#EF476F;font-weight:700;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s">🗑 Gestisci</button>
+    <span class="info">Trascina o seleziona fatture Glovo CSV — vengono parsate e salvate automaticamente</span>
+    <span class="sync" id="syncStatus"></span>
+  </div>
+  <div id="deletePanel" class="hidden" style="margin-bottom:16px;padding:16px 20px;background:#1a0a0f;border-radius:12px;border:1px solid #EF476F40">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span style="font-size:13px;color:#EF476F;font-weight:700">🗑 Seleziona settimane da eliminare</span>
+      <div style="display:flex;gap:8px">
+        <button onclick="deleteSelected()" id="btnConfirmDelete" style="padding:6px 16px;border-radius:8px;border:none;background:#EF476F;color:#FFF;font-weight:700;font-size:11px;cursor:pointer;display:none">Elimina selezionate</button>
+        <button onclick="toggleDeleteMode()" style="padding:6px 16px;border-radius:8px;border:1px solid #6B6B7B40;background:transparent;color:#6B6B7B;font-weight:600;font-size:11px;cursor:pointer">Chiudi</button>
+      </div>
+    </div>
+    <div id="deleteList" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+  </div>
+  <div class="file-chips" id="fileChips"></div>
+  <!-- Selectors -->
+  <div class="sel-row" id="weekSel"></div>
+  <div id="datePicker" class="hidden"></div>
+  <div class="sel-row stores" id="storeSel"></div>
+  <div class="tab-row" id="tabSel"></div>
+  <!-- Content -->
+  <div id="main"></div>
+</div>
+<div class="footer"><p>DONTS Glovo Analytics • Dashboard v3.0 • Supabase Sync</p></div>
+
+<script>
+// ============ CONFIG ============
+const SUPABASE_URL = 'https://ilpsylhtoljilgcubrun.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlscHN5bGh0b2xqaWxnY3VicnVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NzY4MTgsImV4cCI6MjA4NzU1MjgxOH0.Po-V23sHS5rNoL0P7gXQdubB9Rv1Hojns_LKtrC9hM0';
+let supabase = null;
+
+const STORE_COLORS = {"San Cosimato":"#E85D04","Piazza Istria":"#3A86FF","Ponte Milvio":"#06D6A0","Tuscolana":"#9B5DE5"};
+const COLOR_PAL = ["#E85D04","#3A86FF","#06D6A0","#9B5DE5","#EF476F","#FFBA08","#FF6B6B","#26C6DA"];
+const DAYS_ORD = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"];
+const WEEKS_CONFIG_HARDCODED = [
+  {id:"wm1",label:"Gennaio",range:"26/01–01/02"},
+  {id:"w0",label:"Febbraio 1",range:"02–08/02"},
+  {id:"w1",label:"Febbraio 2",range:"09–15/02"},
+  {id:"w2",label:"Febbraio 3",range:"16–22/02"},
+  {id:"month",label:"📊 Mese (1/28 Feb)",range:"01–28/02"},
+];
+
+const fmt = n => n.toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtK = n => n>=1000?(n/1000).toFixed(1)+"k":n.toFixed(0);
+
+let WEEKS_DATA = {};
+let WEEKS_CONFIG = [];
+let ALL_STORES = ["San Cosimato","Piazza Istria","Ponte Milvio","Tuscolana"];
+let activeWeek = "w2";
+let activeStore = "Tutti";
+let activeTab = "overview";
+let charts = {};
+
+// ============ HARDCODED DATA (16 fatture) ============
+</script>
+<script>
+const HARDCODED_WEEKS_DATA = { w2: {
+  "San Cosimato": {
+    invoiceId: "I26KUUFF4L000008",
+    period: "16/02 – 22/02/2026",
+    address: "Via Di S. Cosimato 4",
+    totalOrders: 807,
+    grossRevenue: 24397.94,
+    promos: 3621.34,
+    platformFees: 4154.61,
+    refunds: 151.37,
+    netRevenue: 16470.62,
+    cashOrders: 50,
+    cashAmount: 804.17,
+    avgOrder: 30.23,
+    commission: 20.0,
+    waitTimeFees: 10.0,
+    waitTimeOrders: 10,
+    daily: [
+      { day: "Lun", date: "16/02", orders: 94, revenue: 2538.13, fees: 436.44, promos: 356.03, refunds: 0, net: 1745.66 },
+      { day: "Mar", date: "17/02", orders: 94, revenue: 2631.70, fees: 446.29, promos: 400.34, refunds: 28.07, net: 1757.0 },
+      { day: "Mer", date: "18/02", orders: 113, revenue: 3374.53, fees: 569.78, promos: 525.78, refunds: 13.16, net: 2265.81 },
+      { day: "Gio", date: "19/02", orders: 85, revenue: 2773.75, fees: 472.69, promos: 405.84, refunds: 7.65, net: 1887.57 },
+      { day: "Ven", date: "20/02", orders: 125, revenue: 3902.86, fees: 660.90, promos: 598.72, refunds: 0, net: 2643.24 },
+      { day: "Sab", date: "21/02", orders: 153, revenue: 5151.59, fees: 878.47, promos: 759.24, refunds: 100.34, net: 3413.54 },
+      { day: "Dom", date: "22/02", orders: 143, revenue: 4025.38, fees: 690.04, promos: 575.39, refunds: 2.15, net: 2757.80 },
+    ],
+    hourly: [
+      { hour: "00", orders: 54 }, { hour: "01", orders: 42 },
+      { hour: "12", orders: 46 }, { hour: "13", orders: 53 },
+      { hour: "14", orders: 37 }, { hour: "15", orders: 24 },
+      { hour: "16", orders: 17 }, { hour: "17", orders: 16 },
+      { hour: "18", orders: 55 }, { hour: "19", orders: 132 },
+      { hour: "20", orders: 147 }, { hour: "21", orders: 80 },
+      { hour: "22", orders: 58 }, { hour: "23", orders: 46 },
+    ],
+    topProducts: [
+      { name: "Bacon-Cheese Donts Menu", qty: 143 },
+      { name: "Smoke Donts Menu", qty: 128 },
+      { name: "Dirty Donts Menu", qty: 120 },
+      { name: "Chicken-Smoke Donts Menu", qty: 115 },
+      { name: "Classic Donts Menu", qty: 83 },
+      { name: "Simple Donts Menu", qty: 74 },
+      { name: "Pepper Donts Menu", qty: 59 },
+      { name: "Pepper Donts", qty: 57 },
+      { name: "Nuggets 05 pz", qty: 53 },
+      { name: "Truffle Donts Menu", qty: 48 },
+    ],
+    refundDetails: [
+      { code: "101576350510", date: "21/02 18:42", amount: 45.15, product: "Ordine multiplo (Smoke, Classic, Truffle)" },
+      { code: "101576408276", date: "21/02 19:24", amount: 18.00, product: "Dirty Donts Menu" },
+      { code: "101572552609", date: "17/02 12:15", amount: 18.45, product: "Chicken-Smoke Donts Menu Large" },
+      { code: "101576530471", date: "21/02 20:41", amount: 18.19, product: "Classic Donts Menu Double" },
+      { code: "101576498814", date: "21/02 20:18", amount: 13.50, product: "Truffle Donts Double" },
+    ],
+    anomalies: {
+      commissionVariations: 153,
+      commissionNote: "152 ordini al 19.9%, 1 ordine al 14.9% (da verificare)",
+      feeRoundingMismatches: 70,
+    },
+  },
+  "Piazza Istria": {
+    invoiceId: "I26BWQT2SA000008",
+    period: "15/02 – 22/02/2026",
+    address: "Piazza Istria 25",
+    totalOrders: 991,
+    grossRevenue: 29995.17,
+    promos: 4774.98,
+    platformFees: 5044.39,
+    refunds: 202.44,
+    netRevenue: 19973.36,
+    cashOrders: 63,
+    cashAmount: 1024.59,
+    avgOrder: 30.27,
+    commission: 20.0,
+    waitTimeFees: 24.75,
+    waitTimeOrders: 27,
+    daily: [
+      { day: "Dom*", date: "15/02", orders: 2, revenue: 0, fees: 0, promos: 0, refunds: 36.57, net: -36.57 },
+      { day: "Lun", date: "16/02", orders: 132, revenue: 3989.73, fees: 668.79, promos: 645.82, refunds: 4.63, net: 2670.49 },
+      { day: "Mar", date: "17/02", orders: 108, revenue: 3267.89, fees: 546.51, promos: 535.36, refunds: 12.28, net: 2173.74 },
+      { day: "Mer", date: "18/02", orders: 113, revenue: 3268.78, fees: 553.98, promos: 498.95, refunds: 25.77, net: 2190.08 },
+      { day: "Gio", date: "19/02", orders: 123, revenue: 3623.47, fees: 615.27, promos: 547.32, refunds: 28.77, net: 2432.11 },
+      { day: "Ven", date: "20/02", orders: 168, revenue: 4990.35, fees: 830.42, promos: 838.67, refunds: 46.21, net: 3275.05 },
+      { day: "Sab", date: "21/02", orders: 171, revenue: 5281.53, fees: 897.16, promos: 796.31, refunds: 13.18, net: 3574.88 },
+      { day: "Dom", date: "22/02", orders: 174, revenue: 5573.42, fees: 932.26, promos: 912.55, refunds: 35.03, net: 3693.58 },
+    ],
+    hourly: [
+      { hour: "00", orders: 70 }, { hour: "01", orders: 37 },
+      { hour: "12", orders: 55 }, { hour: "13", orders: 46 },
+      { hour: "14", orders: 49 }, { hour: "15", orders: 34 },
+      { hour: "16", orders: 21 }, { hour: "17", orders: 30 },
+      { hour: "18", orders: 41 }, { hour: "19", orders: 131 },
+      { hour: "20", orders: 212 }, { hour: "21", orders: 124 },
+      { hour: "22", orders: 71 }, { hour: "23", orders: 70 },
+    ],
+    topProducts: [
+      { name: "Bacon-Cheese Donts", qty: 204 },
+      { name: "Smoke Donts Menu", qty: 195 },
+      { name: "Dirty Donts Menu", qty: 167 },
+      { name: "Chicken-Smoke Donts", qty: 162 },
+      { name: "Classic Donts Menu", qty: 90 },
+      { name: "Simple Donts Menu", qty: 82 },
+      { name: "Pepper Donts Menu", qty: 68 },
+      { name: "Pepper Donts", qty: 59 },
+      { name: "Truffle Donts Menu", qty: 54 },
+      { name: "Chicken Pop", qty: 50 },
+    ],
+    refundDetails: [
+      { code: "101575542655", date: "20/02 20:22", amount: 28.88, product: "Smoke Donts Menu + altri" },
+      { code: "101571552371", date: "15/02 23:02", amount: 22.27, product: "Nuggets 10pz + Dirty Donts Menu" },
+      { code: "101574013517", date: "18/02 22:16", amount: 20.27, product: "Smoke Donts Menu Triple" },
+      { code: "101574764108", date: "19/02 21:31", amount: 14.62, product: "Dirty Donts Menu" },
+      { code: "101571573043", date: "15/02 23:50", amount: 14.30, product: "Pepper Donts Double + Menu" },
+    ],
+    anomalies: {
+      commissionVariations: 174,
+      commissionNote: "172 ordini al 19.9%, 2 ordini allo 0% (rimborsi puri 15/02)",
+      feeRoundingMismatches: 0,
+    },
+  },
+  "Ponte Milvio": {
+    invoiceId: "I26ANFL5QE000008",
+    period: "16/02 – 22/02/2026",
+    address: "Piazzale Di Ponte Milvio 12a",
+    totalOrders: 577,
+    grossRevenue: 17715.84,
+    promos: 2550.26,
+    platformFees: 3031.58,
+    refunds: 48.47,
+    netRevenue: 12085.53,
+    cashOrders: 39,
+    cashAmount: 648.99,
+    avgOrder: 30.70,
+    commission: 20.0,
+    waitTimeFees: 26.0,
+    waitTimeOrders: 25,
+    daily: [
+      { day: "Lun", date: "16/02", orders: 59, revenue: 1680.38, fees: 284.13, promos: 259.79, refunds: 17.29, net: 1119.17 },
+      { day: "Mar", date: "17/02", orders: 59, revenue: 1528.54, fees: 253.30, promos: 258.12, refunds: 14.60, net: 1002.52 },
+      { day: "Mer", date: "18/02", orders: 84, revenue: 2535.24, fees: 432.21, promos: 374.32, refunds: 8.51, net: 1720.20 },
+      { day: "Gio", date: "19/02", orders: 66, revenue: 1926.55, fees: 330.77, promos: 272.70, refunds: 2.22, net: 1320.86 },
+      { day: "Ven", date: "20/02", orders: 102, revenue: 3310.23, fees: 561.77, promos: 496.93, refunds: 5.85, net: 2245.68 },
+      { day: "Sab", date: "21/02", orders: 109, revenue: 3606.35, fees: 628.75, promos: 462.92, refunds: 0, net: 2514.68 },
+      { day: "Dom", date: "22/02", orders: 98, revenue: 3128.55, fees: 540.65, promos: 425.48, refunds: 0, net: 2162.42 },
+    ],
+    hourly: [
+      { hour: "00", orders: 32 }, { hour: "01", orders: 24 },
+      { hour: "12", orders: 37 }, { hour: "13", orders: 49 },
+      { hour: "14", orders: 25 }, { hour: "15", orders: 12 },
+      { hour: "16", orders: 12 }, { hour: "17", orders: 11 },
+      { hour: "18", orders: 25 }, { hour: "19", orders: 89 },
+      { hour: "20", orders: 102 }, { hour: "21", orders: 82 },
+      { hour: "22", orders: 41 }, { hour: "23", orders: 36 },
+    ],
+    topProducts: [
+      { name: "Bacon-Cheese Donts", qty: 134 },
+      { name: "Smoke Donts Menu", qty: 114 },
+      { name: "Chicken-Smoke Donts", qty: 110 },
+      { name: "Dirty Donts Menu", qty: 59 },
+      { name: "Simple Donts Menu", qty: 49 },
+      { name: "Chicken Pop", qty: 46 },
+      { name: "Classic Donts Menu", qty: 36 },
+      { name: "Pepper Donts Menu", qty: 32 },
+      { name: "Smoke Donts", qty: 29 },
+      { name: "Pepper Donts", qty: 28 },
+    ],
+    refundDetails: [
+      { code: "101571940566", date: "16/02 15:40", amount: 16.29, product: "Ordine multiplo" },
+      { code: "101573081668", date: "17/02 20:34", amount: 14.60, product: "Ordine multiplo" },
+      { code: "101573938048", date: "18/02 21:00", amount: 8.51, product: "Ordine singolo" },
+      { code: "101574866572", date: "20/02 01:14", amount: 5.85, product: "Ordine singolo" },
+      { code: "101574457765", date: "19/02 16:39", amount: 1.84, product: "Ordine singolo" },
+    ],
+    anomalies: {
+      commissionVariations: 108,
+      commissionNote: "106 ordini al 19.9%, 2 ordini al 14.9% (da verificare)",
+      feeRoundingMismatches: 0,
+    },
+  },
+  "Tuscolana": {
+    invoiceId: "I265QDK0TP000008",
+    period: "16/02 – 22/02/2026",
+    address: "Via Tuscolana 947",
+    totalOrders: 583,
+    grossRevenue: 18748.38,
+    promos: 2913.29,
+    platformFees: 3167.25,
+    refunds: 175.50,
+    netRevenue: 12492.34,
+    cashOrders: 64,
+    cashAmount: 1030.93,
+    avgOrder: 32.16,
+    commission: 20.0,
+    waitTimeFees: 12.50,
+    waitTimeOrders: 10,
+    daily: [
+      { day: "Lun", date: "16/02", orders: 85, revenue: 2672.90, fees: 451.48, promos: 415.56, refunds: 29.29, net: 1776.57 },
+      { day: "Mar", date: "17/02", orders: 64, revenue: 1920.70, fees: 326.64, promos: 287.53, refunds: 5.50, net: 1301.03 },
+      { day: "Mer", date: "18/02", orders: 53, revenue: 1712.65, fees: 284.32, promos: 291.31, refunds: 37.69, net: 1099.33 },
+      { day: "Gio", date: "19/02", orders: 57, revenue: 2024.36, fees: 342.27, promos: 313.00, refunds: 0.83, net: 1368.26 },
+      { day: "Ven", date: "20/02", orders: 86, revenue: 2766.69, fees: 465.26, promos: 440.64, refunds: 11.00, net: 1849.79 },
+      { day: "Sab", date: "21/02", orders: 113, revenue: 3627.35, fees: 618.65, promos: 534.29, refunds: 64.69, net: 2409.72 },
+      { day: "Dom", date: "22/02", orders: 125, revenue: 4023.73, fees: 678.63, promos: 630.96, refunds: 26.50, net: 2687.64 },
+    ],
+    hourly: [
+      { hour: "00", orders: 37 }, { hour: "01", orders: 25 },
+      { hour: "12", orders: 40 }, { hour: "13", orders: 42 },
+      { hour: "14", orders: 28 }, { hour: "15", orders: 28 },
+      { hour: "16", orders: 12 }, { hour: "17", orders: 11 },
+      { hour: "18", orders: 22 }, { hour: "19", orders: 102 },
+      { hour: "20", orders: 104 }, { hour: "21", orders: 54 },
+      { hour: "22", orders: 48 }, { hour: "23", orders: 30 },
+    ],
+    topProducts: [
+      { name: "Bacon-Cheese Donts", qty: 142 },
+      { name: "Chicken-Smoke Donts", qty: 119 },
+      { name: "Dirty Donts Menu", qty: 96 },
+      { name: "Smoke Donts Menu", qty: 88 },
+      { name: "Pepper Donts Menu", qty: 55 },
+      { name: "Chicken Pop", qty: 47 },
+      { name: "Simple Donts Menu", qty: 41 },
+      { name: "Pepper Donts", qty: 39 },
+      { name: "Truffle Donts Menu", qty: 38 },
+      { name: "Classic Donts Menu", qty: 36 },
+    ],
+    refundDetails: [
+      { code: "101574057363", date: "18/02 23:47", amount: 37.69, product: "Ordine multiplo" },
+      { code: "101572312673", date: "16/02 21:32", amount: 29.29, product: "Ordine multiplo" },
+      { code: "101576714408", date: "21/02 22:55", amount: 26.00, product: "Ordine multiplo" },
+      { code: "101577552408", date: "22/02 20:37", amount: 22.74, product: "Ordine multiplo" },
+      { code: "101576047797", date: "21/02 13:52", amount: 18.19, product: "Ordine multiplo" },
+    ],
+    anomalies: {
+      commissionVariations: 98,
+      commissionNote: "98 ordini al 19.9% (arrotondamento standard)",
+      feeRoundingMismatches: 0,
+    },
+  },
+},
+w1: {
+  "San Cosimato": {
+    invoiceId:"I26KUUFF4L000007",period:"09–15/02/2026",address:"Via Di S. Cosimato 4",
+    totalOrders:866,grossRevenue:27749.06,promos:4081.85,platformFees:4733.04,refunds:153.24,
+    netRevenue:18780.93,cashOrders:47,cashAmount:775.42,avgOrder:32.04,commission:20.0,
+    waitTimeFees:13.25,waitTimeOrders:11,
+    daily:[
+      {day:"Lun",orders:95,revenue:2790.42,fees:458.48,promos:430.11,refunds:0,net:1901.83},
+      {day:"Mar",orders:111,revenue:3380.59,fees:556.92,promos:515.31,refunds:0,net:2308.36},
+      {day:"Mer",orders:99,revenue:2967.27,fees:488.20,promos:429.96,refunds:22.21,net:2026.90},
+      {day:"Gio",orders:106,revenue:3285.24,fees:541.16,promos:546.26,refunds:10.40,net:2187.42},
+      {day:"Ven",orders:147,revenue:4784.43,fees:787.78,promos:751.89,refunds:23.50,net:3221.46},
+      {day:"Sab",orders:158,revenue:5879.31,fees:968.45,promos:855.61,refunds:57.00,net:3997.79},
+      {day:"Dom",orders:150,revenue:4661.80,fees:932.05,promos:552.71,refunds:40.13,net:3137.17},
+    ],
+    hourly:[{hour:"00",orders:67},{hour:"01",orders:43},{hour:"12",orders:44},{hour:"13",orders:57},{hour:"14",orders:43},{hour:"15",orders:37},{hour:"16",orders:19},{hour:"17",orders:18},{hour:"18",orders:34},{hour:"19",orders:130},{hour:"20",orders:147},{hour:"21",orders:113},{hour:"22",orders:62},{hour:"23",orders:52}],
+    topProducts:[{name:"Bacon-Cheese Donts",qty:245},{name:"Chicken-Smoke Donts",qty:163},{name:"Smoke Donts Menu",qty:154},{name:"Dirty Donts Menu",qty:144},{name:"Simple Donts Menu",qty:96},{name:"Classic Donts Menu",qty:77},{name:"Chicken Pop",qty:57},{name:"Chicken Donts Menu",qty:55},{name:"Truffle Donts Menu",qty:51},{name:"Simple Donts",qty:45}],
+    refundDetails:[{code:"—",date:"14/02",amount:57.00,product:"Sab San Valentino"},{code:"—",date:"15/02",amount:40.13,product:"Dom post-Valentino"},{code:"—",date:"13/02",amount:23.50,product:"Ven sera"}],
+    anomalies:{commissionVariations:157,commissionNote:"156 al 19.9%, 1 al 15.0%",feeRoundingMismatches:0},
+  },
+  "Piazza Istria": {
+    invoiceId:"I26BWQT2SA000007",period:"09–15/02/2026",address:"Piazza Istria 25",
+    totalOrders:979,grossRevenue:29327.87,promos:4727.89,platformFees:4918.94,refunds:246.44,
+    netRevenue:19434.60,cashOrders:57,cashAmount:885.09,avgOrder:29.96,commission:20.0,
+    waitTimeFees:41.75,waitTimeOrders:32,
+    daily:[
+      {day:"Lun",orders:132,revenue:3747.24,fees:615.57,promos:646.10,refunds:15.30,net:2469.27},
+      {day:"Mar",orders:121,revenue:3464.84,fees:569.20,promos:611.28,refunds:32.98,net:2275.91},
+      {day:"Mer",orders:87,revenue:2332.17,fees:383.14,promos:392.73,refunds:9.40,net:1547.90},
+      {day:"Gio",orders:117,revenue:3120.27,fees:512.74,promos:520.90,refunds:0,net:2086.36},
+      {day:"Ven",orders:152,revenue:4796.73,fees:788.13,promos:771.07,refunds:15.72,net:3222.31},
+      {day:"Sab",orders:182,revenue:5595.47,fees:919.65,promos:844.21,refunds:97.11,net:3651.62},
+      {day:"Dom",orders:186,revenue:6271.15,fees:1130.51,promos:941.60,refunds:32.55,net:4224.61},
+    ],
+    hourly:[{hour:"00",orders:55},{hour:"01",orders:47},{hour:"12",orders:47},{hour:"13",orders:61},{hour:"14",orders:45},{hour:"15",orders:34},{hour:"16",orders:21},{hour:"17",orders:20},{hour:"18",orders:35},{hour:"19",orders:146},{hour:"20",orders:219},{hour:"21",orders:121},{hour:"22",orders:63},{hour:"23",orders:65}],
+    topProducts:[{name:"Bacon-Cheese Donts",qty:226},{name:"Smoke Donts Menu",qty:208},{name:"Chicken-Smoke Donts",qty:192},{name:"Dirty Donts Menu",qty:177},{name:"Simple Donts Menu",qty:93},{name:"Classic Donts Menu",qty:79},{name:"Chicken Donts Menu",qty:59},{name:"Truffle Donts Menu",qty:43},{name:"Nuggets 05 pz",qty:37},{name:"Simple Donts",qty:35}],
+    refundDetails:[{code:"—",date:"14/02",amount:97.11,product:"Sab San Valentino (picco)"},{code:"—",date:"10/02",amount:32.98,product:"Martedì"},{code:"—",date:"15/02",amount:32.55,product:"Domenica"}],
+    anomalies:{commissionVariations:169,commissionNote:"165 al 19.9%, 2 allo 0%, 2 al 15.0%",feeRoundingMismatches:0},
+  },
+  "Ponte Milvio": {
+    invoiceId:"I26ANFL5QE000007",period:"09–15/02/2026",address:"Piazzale Di Ponte Milvio 12a",
+    totalOrders:570,grossRevenue:17767.58,promos:2688.63,platformFees:3015.94,refunds:54.02,
+    netRevenue:12008.99,cashOrders:45,cashAmount:702.67,avgOrder:31.17,commission:20.0,
+    waitTimeFees:15.25,waitTimeOrders:14,
+    daily:[
+      {day:"Lun",orders:66,revenue:1718.25,fees:282.63,promos:261.00,refunds:0,net:1174.63},
+      {day:"Mar",orders:60,revenue:1771.68,fees:291.42,promos:297.84,refunds:5.65,net:1176.77},
+      {day:"Mer",orders:64,revenue:1856.66,fees:305.40,promos:313.97,refunds:0,net:1237.29},
+      {day:"Gio",orders:79,revenue:2523.29,fees:415.00,promos:421.66,refunds:0,net:1686.63},
+      {day:"Ven",orders:90,revenue:2866.58,fees:471.56,promos:477.64,refunds:15.77,net:1901.59},
+      {day:"Sab",orders:113,revenue:3756.72,fees:617.99,promos:514.74,refunds:32.60,net:2591.39},
+      {day:"Dom",orders:98,revenue:3274.40,fees:631.94,promos:401.78,refunds:0,net:2240.69},
+    ],
+    hourly:[{hour:"00",orders:29},{hour:"01",orders:19},{hour:"12",orders:30},{hour:"13",orders:23},{hour:"14",orders:27},{hour:"15",orders:18},{hour:"16",orders:13},{hour:"17",orders:8},{hour:"18",orders:26},{hour:"19",orders:98},{hour:"20",orders:122},{hour:"21",orders:86},{hour:"22",orders:35},{hour:"23",orders:36}],
+    topProducts:[{name:"Bacon-Cheese Donts",qty:157},{name:"Smoke Donts Menu",qty:118},{name:"Chicken-Smoke Donts",qty:108},{name:"Dirty Donts Menu",qty:94},{name:"Chicken Wings",qty:51},{name:"Simple Donts Menu",qty:50},{name:"Classic Donts Menu",qty:37},{name:"Chicken Donts Menu",qty:32},{name:"Chicken Pop",qty:32},{name:"Nuggets 05 pz",qty:21}],
+    refundDetails:[{code:"—",date:"14/02",amount:32.60,product:"Sab San Valentino"},{code:"—",date:"13/02",amount:15.77,product:"Ven sera"},{code:"—",date:"10/02",amount:5.65,product:"Martedì"}],
+    anomalies:{commissionVariations:111,commissionNote:"111 al 19.9%",feeRoundingMismatches:0},
+  },
+  "Tuscolana": {
+    invoiceId:"I265QDK0TP000007",period:"09–15/02/2026",address:"Via Tuscolana 947",
+    totalOrders:658,grossRevenue:21299.18,promos:3315.02,platformFees:3597.10,refunds:227.41,
+    netRevenue:14159.65,cashOrders:57,cashAmount:929.39,avgOrder:32.37,commission:20.0,
+    waitTimeFees:29.25,waitTimeOrders:27,
+    daily:[
+      {day:"Lun",orders:79,revenue:2437.63,fees:400.90,promos:432.93,refunds:18.89,net:1584.91},
+      {day:"Mar",orders:75,revenue:2242.37,fees:368.78,promos:377.19,refunds:12.12,net:1483.28},
+      {day:"Mer",orders:82,revenue:2691.48,fees:442.66,promos:447.71,refunds:3.97,net:1797.14},
+      {day:"Gio",orders:92,revenue:2821.87,fees:464.12,promos:438.77,refunds:0,net:1918.98},
+      {day:"Ven",orders:106,revenue:3488.26,fees:573.78,promos:581.39,refunds:72.78,net:2259.31},
+      {day:"Sab",orders:121,revenue:4199.45,fees:690.72,promos:635.17,refunds:85.84,net:2787.94},
+      {day:"Dom",orders:103,revenue:3418.12,fees:656.14,promos:401.86,refunds:33.81,net:2328.09},
+    ],
+    hourly:[{hour:"00",orders:43},{hour:"01",orders:30},{hour:"12",orders:49},{hour:"13",orders:42},{hour:"14",orders:38},{hour:"15",orders:15},{hour:"16",orders:9},{hour:"17",orders:13},{hour:"18",orders:32},{hour:"19",orders:124},{hour:"20",orders:123},{hour:"21",orders:51},{hour:"22",orders:57},{hour:"23",orders:32}],
+    topProducts:[{name:"Bacon-Cheese Donts",qty:159},{name:"Chicken-Smoke Donts",qty:153},{name:"Smoke Donts Menu",qty:140},{name:"Dirty Donts Menu",qty:128},{name:"Simple Donts Menu",qty:55},{name:"Classic Donts Menu",qty:45},{name:"Chicken Pop",qty:44},{name:"Chicken Wings",qty:40},{name:"Chicken Donts Menu",qty:39},{name:"Smoke Donts",qty:39}],
+    refundDetails:[{code:"—",date:"14/02",amount:85.84,product:"Sab San Valentino (picco)"},{code:"—",date:"13/02",amount:72.78,product:"Ven sera"},{code:"—",date:"15/02",amount:33.81,product:"Domenica"}],
+    anomalies:{commissionVariations:119,commissionNote:"119 al 19.9%",feeRoundingMismatches:0},
+  },
+},
+w0: {
+  "San Cosimato": {
+    invoiceId:"I26KUUFF4L000006",period:"02–08/02/2026",address:"Via Di S. Cosimato 4",
+    totalOrders:911,grossRevenue:28558.02,promos:4421.77,platformFees:4827.69,refunds:89.96,
+    netRevenue:19218.60,cashOrders:56,cashAmount:875.51,avgOrder:31.35,commission:20.0,
+    waitTimeFees:7.75,waitTimeOrders:7,
+    daily:[
+      {day:"Lun",orders:90,revenue:2565.30,fees:421.80,promos:417.55,refunds:0,net:1725.95},
+      {day:"Mar",orders:118,revenue:3760.68,fees:618.43,promos:534.91,refunds:10.01,net:2597.33},
+      {day:"Mer",orders:106,revenue:3252.62,fees:534.87,promos:521.38,refunds:12.84,net:2183.53},
+      {day:"Gio",orders:115,revenue:3561.10,fees:585.60,promos:565.73,refunds:6.50,net:2403.27},
+      {day:"Ven",orders:143,revenue:4672.17,fees:768.62,promos:784.87,refunds:30.28,net:3088.40},
+      {day:"Sab",orders:164,revenue:5314.90,fees:874.23,promos:866.06,refunds:21.68,net:3552.93},
+      {day:"Dom",orders:175,revenue:5431.25,fees:1024.14,promos:730.27,refunds:8.65,net:3667.19},
+    ],
+    hourly:[{hour:"00",orders:59},{hour:"01",orders:37},{hour:"12",orders:57},{hour:"13",orders:56},{hour:"14",orders:39},{hour:"15",orders:40},{hour:"16",orders:28},{hour:"17",orders:22},{hour:"18",orders:47},{hour:"19",orders:120},{hour:"20",orders:176},{hour:"21",orders:108},{hour:"22",orders:66},{hour:"23",orders:56}],
+    topProducts:[{name:"Bacon-Cheese Donts",qty:238},{name:"Dirty Donts Menu",qty:173},{name:"Chicken-Smoke Donts",qty:164},{name:"Smoke Donts Menu",qty:143},{name:"Classic Donts Menu",qty:112},{name:"Simple Donts Menu",qty:100},{name:"Chicken Donts Menu",qty:59},{name:"Truffle Donts Menu",qty:54},{name:"Chicken Wings",qty:52},{name:"Chicken Pop",qty:42}],
+    refundDetails:[{code:"—",date:"06/02",amount:30.28,product:"Venerdì"},{code:"—",date:"07/02",amount:21.68,product:"Sabato"},{code:"—",date:"04/02",amount:12.84,product:"Mercoledì"}],
+    anomalies:{commissionVariations:125,commissionNote:"125 al 19.9%",feeRoundingMismatches:0},
+  },
+  "Piazza Istria": {
+    invoiceId:"I26BWQT2SA000006",period:"02–08/02/2026",address:"Piazza Istria 25",
+    totalOrders:989,grossRevenue:28917.27,promos:4642.61,platformFees:4854.13,refunds:272.40,
+    netRevenue:19148.13,cashOrders:67,cashAmount:1066.32,avgOrder:29.24,commission:20.0,
+    waitTimeFees:56.50,waitTimeOrders:38,
+    daily:[
+      {day:"Lun",orders:123,revenue:3616.75,fees:594.64,promos:590.37,refunds:26.00,net:2405.74},
+      {day:"Mar",orders:118,revenue:3419.36,fees:562.17,promos:566.97,refunds:61.32,net:2228.90},
+      {day:"Mer",orders:98,revenue:2671.13,fees:439.12,promos:466.26,refunds:40.54,net:1725.21},
+      {day:"Gio",orders:129,revenue:3537.08,fees:581.47,promos:598.75,refunds:8.01,net:2348.85},
+      {day:"Ven",orders:156,revenue:4853.19,fees:797.97,promos:779.05,refunds:44.07,net:3232.10},
+      {day:"Sab",orders:193,revenue:5800.70,fees:953.56,promos:933.35,refunds:34.19,net:3879.60},
+      {day:"Dom",orders:171,revenue:5019.06,fees:925.20,promos:707.86,refunds:42.10,net:3343.90},
+    ],
+    hourly:[{hour:"00",orders:67},{hour:"01",orders:37},{hour:"12",orders:43},{hour:"13",orders:65},{hour:"14",orders:49},{hour:"15",orders:30},{hour:"16",orders:24},{hour:"17",orders:14},{hour:"18",orders:51},{hour:"19",orders:147},{hour:"20",orders:220},{hour:"21",orders:120},{hour:"22",orders:63},{hour:"23",orders:59}],
+    topProducts:[{name:"Bacon-Cheese Donts",qty:258},{name:"Chicken-Smoke Donts",qty:182},{name:"Smoke Donts Menu",qty:182},{name:"Dirty Donts Menu",qty:171},{name:"Classic Donts Menu",qty:82},{name:"Simple Donts Menu",qty:81},{name:"Chicken Wings",qty:51},{name:"Truffle Donts Menu",qty:51},{name:"Smoke Donts",qty:48},{name:"Chicken Donts Menu",qty:42}],
+    refundDetails:[{code:"—",date:"03/02",amount:61.32,product:"Martedì"},{code:"—",date:"06/02",amount:44.07,product:"Venerdì"},{code:"—",date:"08/02",amount:42.10,product:"Domenica"}],
+    anomalies:{commissionVariations:176,commissionNote:"174 al 19.9%, 1 allo 0%, 1 al 15.0%",feeRoundingMismatches:0},
+  },
+  "Ponte Milvio": {
+    invoiceId:"I26ANFL5QE000006",period:"02–08/02/2026",address:"Piazzale Di Ponte Milvio 12a",
+    totalOrders:633,grossRevenue:20620.21,promos:3145.77,platformFees:3495.09,refunds:29.75,
+    netRevenue:13949.60,cashOrders:43,cashAmount:668.19,avgOrder:32.58,commission:20.0,
+    waitTimeFees:32.75,waitTimeOrders:26,
+    daily:[
+      {day:"Lun",orders:70,revenue:2116.15,fees:347.77,promos:329.50,refunds:20.00,net:1418.88},
+      {day:"Mar",orders:64,revenue:2033.86,fees:334.25,promos:318.12,refunds:0,net:1381.49},
+      {day:"Mer",orders:67,revenue:2091.21,fees:343.83,promos:361.05,refunds:0,net:1385.33},
+      {day:"Gio",orders:82,revenue:2226.07,fees:365.99,promos:346.06,refunds:0,net:1514.02},
+      {day:"Ven",orders:100,revenue:3730.70,fees:613.62,promos:598.24,refunds:0,net:2518.84},
+      {day:"Sab",orders:121,revenue:4231.05,fees:695.57,promos:662.31,refunds:7.07,net:2866.10},
+      {day:"Dom",orders:129,revenue:4191.17,fees:794.06,promos:530.49,refunds:2.68,net:2864.94},
+    ],
+    hourly:[{hour:"00",orders:19},{hour:"01",orders:15},{hour:"12",orders:39},{hour:"13",orders:46},{hour:"14",orders:25},{hour:"15",orders:23},{hour:"16",orders:13},{hour:"17",orders:10},{hour:"18",orders:24},{hour:"19",orders:127},{hour:"20",orders:147},{hour:"21",orders:80},{hour:"22",orders:36},{hour:"23",orders:29}],
+    topProducts:[{name:"Bacon-Cheese Donts",qty:180},{name:"Smoke Donts Menu",qty:135},{name:"Chicken-Smoke Donts",qty:128},{name:"Dirty Donts Menu",qty:108},{name:"Simple Donts Menu",qty:51},{name:"Chicken Pop",qty:42},{name:"Truffle Donts Menu",qty:41},{name:"Classic Donts Menu",qty:40},{name:"Chicken Donts Menu",qty:32},{name:"Chicken Wings",qty:30}],
+    refundDetails:[{code:"—",date:"02/02",amount:20.00,product:"Lunedì"},{code:"—",date:"07/02",amount:7.07,product:"Sabato"},{code:"—",date:"08/02",amount:2.68,product:"Domenica"}],
+    anomalies:{commissionVariations:120,commissionNote:"120 al 19.9%",feeRoundingMismatches:0},
+  },
+  "Tuscolana": {
+    invoiceId:"I265QDK0TP000006",period:"02–08/02/2026",address:"Via Tuscolana 947",
+    totalOrders:670,grossRevenue:22156.98,promos:3494.05,platformFees:3728.14,refunds:86.01,
+    netRevenue:14848.78,cashOrders:71,cashAmount:1166.35,avgOrder:33.07,commission:20.0,
+    waitTimeFees:11.50,waitTimeOrders:14,
+    daily:[
+      {day:"Lun",orders:87,revenue:2677.49,fees:440.23,promos:455.50,refunds:0,net:1781.76},
+      {day:"Mar",orders:80,revenue:2555.28,fees:420.22,promos:395.69,refunds:4.65,net:1734.72},
+      {day:"Mer",orders:76,revenue:2367.36,fees:389.33,promos:375.91,refunds:1.46,net:1600.66},
+      {day:"Gio",orders:82,revenue:2792.79,fees:459.28,promos:453.93,refunds:0,net:1879.58},
+      {day:"Ven",orders:95,revenue:3084.27,fees:507.22,promos:517.59,refunds:33.75,net:2025.21},
+      {day:"Sab",orders:128,revenue:4410.40,fees:725.24,promos:703.77,refunds:41.25,net:2940.14},
+      {day:"Dom",orders:122,revenue:4269.39,fees:786.62,promos:591.66,refunds:4.90,net:2886.71},
+    ],
+    hourly:[{hour:"00",orders:36},{hour:"01",orders:21},{hour:"12",orders:60},{hour:"13",orders:58},{hour:"14",orders:29},{hour:"15",orders:19},{hour:"16",orders:11},{hour:"17",orders:14},{hour:"18",orders:22},{hour:"19",orders:109},{hour:"20",orders:128},{hour:"21",orders:82},{hour:"22",orders:41},{hour:"23",orders:40}],
+    topProducts:[{name:"Bacon-Cheese Donts",qty:190},{name:"Dirty Donts Menu",qty:155},{name:"Smoke Donts Menu",qty:139},{name:"Chicken-Smoke Donts",qty:138},{name:"Simple Donts Menu",qty:60},{name:"Truffle Donts Menu",qty:57},{name:"Classic Donts Menu",qty:51},{name:"Chicken Wings",qty:48},{name:"Chicken Donts Menu",qty:44},{name:"Chicken Pop",qty:34}],
+    refundDetails:[{code:"—",date:"07/02",amount:41.25,product:"Sabato"},{code:"—",date:"06/02",amount:33.75,product:"Venerdì"},{code:"—",date:"08/02",amount:4.90,product:"Domenica"}],
+    anomalies:{commissionVariations:127,commissionNote:"122 al 19.9%, 5 al 15.0%",feeRoundingMismatches:0},
+  },
+},
+wm1: {
+  "San Cosimato": {
+    invoiceId:"I26KUUFF4L000005",period:"26/01–01/02/2026",address:"Via Di S. Cosimato 4",
+    totalOrders:862,grossRevenue:27348.83,promos:4120.55,platformFees:4645.22,refunds:98.81,
+    netRevenue:18484.25,cashOrders:44,cashAmount:675.45,avgOrder:31.73,commission:20.0,
+    waitTimeFees:17.50,waitTimeOrders:18,
+    daily:[
+      {day:"Lun",orders:77,revenue:2240.91,fees:368.29,promos:337.20,refunds:8.21,net:1527.21},
+      {day:"Mar",orders:86,revenue:2420.11,fees:397.99,promos:388.25,refunds:11.26,net:1622.61},
+      {day:"Mer",orders:105,revenue:3361.53,fees:552.72,promos:535.87,refunds:11.31,net:2262.63},
+      {day:"Gio",orders:126,revenue:3793.57,fees:623.72,promos:586.59,refunds:33.87,net:2549.39},
+      {day:"Ven",orders:157,revenue:5299.96,fees:871.27,promos:857.88,refunds:3.90,net:3566.91},
+      {day:"Sab",orders:147,revenue:5041.72,fees:828.83,promos:772.35,refunds:6.32,net:3434.22},
+      {day:"Dom",orders:164,revenue:5191.03,fees:1002.40,promos:642.41,refunds:23.94,net:3521.28},
+    ],
+    hourly:[{hour:"00",orders:39},{hour:"01",orders:41},{hour:"12",orders:48},{hour:"13",orders:55},{hour:"14",orders:34},{hour:"15",orders:23},{hour:"16",orders:19},{hour:"17",orders:23},{hour:"18",orders:43},{hour:"19",orders:162},{hour:"20",orders:172},{hour:"21",orders:92},{hour:"22",orders:55},{hour:"23",orders:56}],
+    topProducts:[{name:"Bacon-Cheese Donts",qty:207},{name:"Smoke Donts Menu",qty:158},{name:"Dirty Donts Menu",qty:158},{name:"Chicken-Smoke Donts",qty:153},{name:"Classic Donts Menu",qty:83},{name:"Simple Donts Menu",qty:81},{name:"Chicken Donts Menu",qty:62},{name:"Truffle Donts Menu",qty:60},{name:"Chicken Pop",qty:50},{name:"Chicken Wings",qty:42}],
+    refundDetails:[{code:"—",date:"29/01",amount:33.87,product:"Giovedì"},{code:"—",date:"01/02",amount:23.94,product:"Domenica"},{code:"—",date:"28/01",amount:11.31,product:"Mercoledì"}],
+    anomalies:{commissionVariations:148,commissionNote:"147 al 19.9%, 1 al 15.0%",feeRoundingMismatches:0},
+  },
+  "Piazza Istria": {
+    invoiceId:"I26BWQT2SA000005",period:"26/01–01/02/2026",address:"Piazza Istria 25",
+    totalOrders:1076,grossRevenue:31396.14,promos:5051.32,platformFees:5266.31,refunds:125.94,
+    netRevenue:20952.57,cashOrders:57,cashAmount:884.05,avgOrder:29.18,commission:20.0,
+    waitTimeFees:48.00,waitTimeOrders:40,
+    daily:[
+      {day:"Lun",orders:134,revenue:3862.35,fees:634.87,promos:637.86,refunds:27.55,net:2562.07},
+      {day:"Mar",orders:111,revenue:3063.84,fees:503.53,promos:518.15,refunds:20.50,net:2021.66},
+      {day:"Mer",orders:149,revenue:4477.69,fees:735.92,promos:765.39,refunds:18.62,net:2957.76},
+      {day:"Gio",orders:151,revenue:4411.37,fees:724.82,promos:716.04,refunds:0.83,net:2969.68},
+      {day:"Ven",orders:158,revenue:4824.66,fees:793.27,promos:768.43,refunds:43.23,net:3176.73},
+      {day:"Sab",orders:167,revenue:4764.40,fees:783.38,promos:771.51,refunds:8.01,net:3201.50},
+      {day:"Dom",orders:206,revenue:5991.83,fees:1090.52,promos:873.94,refunds:7.20,net:4063.17},
+    ],
+    hourly:[{hour:"00",orders:56},{hour:"01",orders:28},{hour:"12",orders:30},{hour:"13",orders:80},{hour:"14",orders:47},{hour:"15",orders:35},{hour:"16",orders:18},{hour:"17",orders:29},{hour:"18",orders:52},{hour:"19",orders:189},{hour:"20",orders:215},{hour:"21",orders:147},{hour:"22",orders:80},{hour:"23",orders:70}],
+    topProducts:[{name:"Bacon-Cheese Donts",qty:242},{name:"Smoke Donts Menu",qty:214},{name:"Chicken-Smoke Donts",qty:209},{name:"Dirty Donts Menu",qty:207},{name:"Simple Donts Menu",qty:83},{name:"Classic Donts Menu",qty:75},{name:"Truffle Donts Menu",qty:63},{name:"Chicken Donts Menu",qty:55},{name:"Chicken Wings",qty:51},{name:"Smoke Donts",qty:40}],
+    refundDetails:[{code:"—",date:"30/01",amount:43.23,product:"Venerdì"},{code:"—",date:"26/01",amount:27.55,product:"Lunedì"},{code:"—",date:"27/01",amount:20.50,product:"Martedì"}],
+    anomalies:{commissionVariations:187,commissionNote:"184 al 19.9%, 1 al 14.9%, 2 al 15.0%",feeRoundingMismatches:0},
+  },
+  "Ponte Milvio": {
+    invoiceId:"I26ANFL5QE000005",period:"26/01–01/02/2026",address:"Piazzale Di Ponte Milvio 12a",
+    totalOrders:606,grossRevenue:18643.08,promos:2814.96,platformFees:3164.06,refunds:192.76,
+    netRevenue:12471.30,cashOrders:52,cashAmount:802.74,avgOrder:30.76,commission:20.0,
+    waitTimeFees:41.25,waitTimeOrders:31,
+    daily:[
+      {day:"Lun",orders:61,revenue:1837.23,fees:302.00,promos:283.30,refunds:0,net:1251.93},
+      {day:"Mar",orders:56,revenue:1784.88,fees:293.42,promos:332.88,refunds:61.15,net:1097.43},
+      {day:"Mer",orders:73,revenue:2102.84,fees:345.67,promos:352.54,refunds:19.00,net:1386.63},
+      {day:"Gio",orders:77,revenue:2556.64,fees:420.33,promos:367.23,refunds:0,net:1769.08},
+      {day:"Ven",orders:96,revenue:3072.85,fees:505.17,promos:472.25,refunds:42.00,net:2052.43},
+      {day:"Sab",orders:106,revenue:3200.86,fees:526.14,promos:503.30,refunds:0,net:2171.92},
+      {day:"Dom",orders:136,revenue:4087.78,fees:771.33,promos:503.46,refunds:59.84,net:2752.65},
+    ],
+    hourly:[{hour:"00",orders:30},{hour:"01",orders:17},{hour:"02",orders:1},{hour:"12",orders:27},{hour:"13",orders:32},{hour:"14",orders:23},{hour:"15",orders:27},{hour:"16",orders:20},{hour:"17",orders:8},{hour:"18",orders:30},{hour:"19",orders:119},{hour:"20",orders:117},{hour:"21",orders:83},{hour:"22",orders:37},{hour:"23",orders:35}],
+    topProducts:[{name:"Bacon-Cheese Donts",qty:145},{name:"Smoke Donts Menu",qty:133},{name:"Chicken-Smoke Donts",qty:116},{name:"Dirty Donts Menu",qty:86},{name:"Simple Donts Menu",qty:66},{name:"Classic Donts Menu",qty:40},{name:"Chicken Donts Menu",qty:38},{name:"Chicken Wings",qty:37},{name:"Chicken Pop",qty:33},{name:"Simple Donts",qty:32}],
+    refundDetails:[{code:"—",date:"27/01",amount:61.15,product:"Martedì"},{code:"—",date:"01/02",amount:59.84,product:"Domenica"},{code:"—",date:"30/01",amount:42.00,product:"Venerdì"}],
+    anomalies:{commissionVariations:101,commissionNote:"99 al 19.9%, 1 allo 0%, 1 al 14.9%",feeRoundingMismatches:0},
+  },
+  "Tuscolana": {
+    invoiceId:"I265QDK0TP000005",period:"26/01–01/02/2026",address:"Via Tuscolana 947",
+    totalOrders:628,grossRevenue:19767.25,promos:3061.33,platformFees:3339.80,refunds:177.75,
+    netRevenue:13188.37,cashOrders:74,cashAmount:1207.25,avgOrder:31.48,commission:20.0,
+    waitTimeFees:13.25,waitTimeOrders:13,
+    daily:[
+      {day:"Lun",orders:86,revenue:2461.37,fees:404.60,promos:395.85,refunds:6.46,net:1654.46},
+      {day:"Mar",orders:81,revenue:2318.27,fees:381.18,promos:380.65,refunds:20.21,net:1536.23},
+      {day:"Mer",orders:64,revenue:1954.92,fees:321.38,promos:319.46,refunds:0,net:1314.08},
+      {day:"Gio",orders:88,revenue:2793.42,fees:459.26,promos:447.63,refunds:16.28,net:1870.25},
+      {day:"Ven",orders:91,revenue:2746.35,fees:451.48,promos:433.75,refunds:22.90,net:1838.22},
+      {day:"Sab",orders:106,revenue:3700.50,fees:608.36,promos:565.46,refunds:61.09,net:2465.49},
+      {day:"Dom",orders:111,revenue:3752.19,fees:713.54,promos:506.31,refunds:50.81,net:2481.27},
+    ],
+    hourly:[{hour:"00",orders:35},{hour:"01",orders:23},{hour:"12",orders:36},{hour:"13",orders:53},{hour:"14",orders:31},{hour:"15",orders:16},{hour:"16",orders:15},{hour:"17",orders:10},{hour:"18",orders:22},{hour:"19",orders:121},{hour:"20",orders:126},{hour:"21",orders:59},{hour:"22",orders:37},{hour:"23",orders:43}],
+    topProducts:[{name:"Bacon-Cheese Donts",qty:159},{name:"Chicken-Smoke Donts",qty:152},{name:"Smoke Donts Menu",qty:129},{name:"Dirty Donts Menu",qty:100},{name:"Classic Donts Menu",qty:56},{name:"Truffle Donts Menu",qty:54},{name:"Simple Donts Menu",qty:51},{name:"Chicken Wings",qty:44},{name:"Smoke Donts",qty:38},{name:"Chicken Pop",qty:37}],
+    refundDetails:[{code:"—",date:"31/01",amount:61.09,product:"Sabato"},{code:"—",date:"01/02",amount:50.81,product:"Domenica"},{code:"—",date:"30/01",amount:22.90,product:"Venerdì"}],
+    anomalies:{commissionVariations:107,commissionNote:"106 al 19.9%, 1 al 15.0%",feeRoundingMismatches:0},
+  },
+},
+};
+
+</script>
+<script>
+// ============ CSV PARSER ============
+function parseCSVText(text){
+  const lines=[];let cur="",inQ=false;
+  for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){inQ=!inQ;cur+=c}else if((c==='\n'||c==='\r')&&!inQ){if(cur.trim())lines.push(cur);cur="";if(c==='\r'&&text[i+1]==='\n')i++}else cur+=c}
+  if(cur.trim())lines.push(cur);
+  if(lines.length<2)return[];
+  const hdr=csvLine(lines[0]);const rows=[];
+  for(let i=1;i<lines.length;i++){const v=csvLine(lines[i]);const o={};hdr.forEach((h,j)=>o[h]=v[j]||"");rows.push(o)}
+  return rows;
+}
+function csvLine(l){const v=[];let c="",q=false;for(let i=0;i<l.length;i++){const ch=l[i];if(ch==='"'){if(q&&l[i+1]==='"'){c+='"';i++}else q=!q}else if(ch===','&&!q){v.push(c);c=""}else c+=ch}v.push(c);return v}
+function pf(v){if(!v||!v.trim())return 0;return parseFloat(v.replace(/,/g,'.').trim())||0}
+function parseGlovoDate(s){if(!s)return null;s=s.trim().replace(/"/g,'');const m=s.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})/);if(!m)return null;const[_,y,a,b,h,mi]=m;
+  // Glovo uses YYYY-DD-MM format (day first, month second)
+  // Detect: if a>12 it must be a day; if b>12 it must be a day (so a=month)
+  // If both <=12, check all dates in batch to decide; default YYYY-DD-MM (Glovo standard)
+  let day=+a, mon=+b;
+  if(day>12){/* a is day, b is month - standard Glovo */}
+  else if(mon>12){day=+b;mon=+a;/* b is day, a is month - ISO format */}
+  else {/* both <=12: assume Glovo YYYY-DD-MM → a=day, b=month */}
+  const d=new Date(+y,mon-1,day,+h,+mi);return isNaN(d.getTime())?null:d}
+function identifyStore(rows){
+  const addr=(rows[0]?.["Store Address"]||"").split('\n')[0].trim().toLowerCase();
+  if(addr.includes("cosimato"))return"San Cosimato";if(addr.includes("istria"))return"Piazza Istria";
+  if(addr.includes("milvio"))return"Ponte Milvio";if(addr.includes("tuscolana"))return"Tuscolana";
+  const nm=(rows[0]?.["Store Name"]||"").toLowerCase();
+  if(nm.includes("tusc"))return"Tuscolana";if(nm.includes("milvio"))return"Ponte Milvio";
+  if(nm.includes("istria"))return"Piazza Istria";if(nm.includes("cosimato"))return"San Cosimato";
+  return rows[0]?.["Store Name"]||"Sconosciuto";
+}
+function getWeekId(dates){if(!dates.length)return"w_unknown";dates.sort((a,b)=>a-b);const mid=dates[Math.floor(dates.length/2)];const mon=new Date(mid);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));return`w_${mon.getFullYear()}${String(mon.getMonth()+1).padStart(2,'0')}${String(mon.getDate()).padStart(2,'0')}`}
+function getWeekRange(dates){if(!dates.length)return"?";dates.sort((a,b)=>a-b);const d=dt=>`${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;const yr=dates[0].getFullYear();return`${d(dates[0])}–${d(dates[dates.length-1])} ${yr}`}
+
+function analyzeCSV(rows){
+  const store=identifyStore(rows);const addr=(rows[0]?.["Store Address"]||"").split('\n')[0].trim();
+  const dates=[];rows.forEach(r=>{const d=parseGlovoDate(r["Notification Partner Time"]);if(d)dates.push(d)});dates.sort((a,b)=>a-b);
+  const weekId=getWeekId(dates);const range=getWeekRange(dates);
+  let tP=0,tPP=0,tPF=0,tFee=0,tRef=0,tCash=0,tWait=0,wC=0,cC=0;
+  const daily={},hourly={},products={},refOrders=[],commR={};
+  rows.forEach(row=>{
+    const p={price:pf(row["Price of Products"]),pp:pf(row["Product Promotion Paid by Partner"]),pf2:pf(row["Flash Offer Promotion Paid by Partner"]),fee:pf(row["Glovo platform fee"]),pct:pf(row["Total Charged to Partner Percentage"]),ref:pf(row["Refunds (Incidents)"]),cash:pf(row["Products paid in cash"]),wait:pf(row["Wait Time Fee"])};
+    tP+=p.price;tPP+=p.pp;tPF+=p.pf2;tFee+=p.fee;tRef+=p.ref;tCash+=p.cash;tWait+=p.wait;
+    if(p.wait>0)wC++;if(p.cash>0)cC++;
+    const rate=Math.round(p.pct*10)/10;commR[rate]=(commR[rate]||0)+1;
+    const dt=parseGlovoDate(row["Notification Partner Time"]);
+    if(dt){const dn=DAYS_ORD[(dt.getDay()+6)%7];if(!daily[dn])daily[dn]={day:dn,orders:0,revenue:0,fees:0,promos:0,refunds:0,net:0};daily[dn].orders++;daily[dn].revenue+=p.price;daily[dn].fees+=p.fee;daily[dn].promos+=p.pp+p.pf2;daily[dn].refunds+=p.ref;daily[dn].net+=p.price-p.pp-p.pf2-p.fee-p.ref;hourly[String(dt.getHours()).padStart(2,'0')]=(hourly[String(dt.getHours()).padStart(2,'0')]||0)+1}
+    const desc=row["Description"]||"";desc.split(/(?=\d+\s*x\s+)/).forEach(part=>{const pm=part.trim().match(/^(\d+)\s*x\s+(.+)/);if(!pm)return;let rest=pm[2].trim();const di=rest.indexOf(' - ');let nm=di>0?rest.substring(0,di).trim():rest.trim();nm=nm.replace(/\s+(small|large|Single|Double|Triple)\s*$/i,'').replace(/\s+/g,' ').trim();if(nm.length>2&&nm.length<60)products[nm]=(products[nm]||0)+parseInt(pm[1])})
+    if(p.ref>0){const dt2=parseGlovoDate(row["Notification Partner Time"]);const ds=dt2?`${String(dt2.getDate()).padStart(2,'0')}/${String(dt2.getMonth()+1).padStart(2,'0')} ${String(dt2.getHours()).padStart(2,'0')}:${String(dt2.getMinutes()).padStart(2,'0')}`:row["Notification Partner Time"];refOrders.push({code:row["Glovo Code"]||"",date:ds,amount:p.ref,product:(row["Product with Incidents"]||desc||"").substring(0,60)})}
+  });
+  const n=rows.length,promos=tPP+tPF,net=tP-promos-tFee-tRef;
+  let cV=0,cN=[];Object.entries(commR).forEach(([r,c])=>{const rv=parseFloat(r);if(rv!==20&&rv!==0){cV+=c;cN.push(`${c} ordini al ${rv}%`)}});
+  refOrders.sort((a,b)=>b.amount-a.amount);
+  return{store,weekId,range,data:{invoiceId:"",period:range,address:addr,totalOrders:n,grossRevenue:Math.round(tP*100)/100,promos:Math.round(promos*100)/100,platformFees:Math.round(tFee*100)/100,refunds:Math.round(tRef*100)/100,netRevenue:Math.round(net*100)/100,cashOrders:cC,cashAmount:Math.round(tCash*100)/100,avgOrder:Math.round(tP/n*100)/100,commission:20,waitTimeFees:Math.round(tWait*100)/100,waitTimeOrders:wC,daily:DAYS_ORD.map(d=>daily[d]||{day:d,orders:0,revenue:0,fees:0,promos:0,refunds:0,net:0}),hourly:Object.entries(hourly).sort((a,b)=>a[0].localeCompare(b[0])).map(([h,o])=>({hour:h,orders:o})),topProducts:Object.entries(products).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([n,q])=>({name:n,qty:q})),refundDetails:refOrders.slice(0,5).map(r=>({code:r.code,date:r.date,amount:r.amount,product:r.product})),anomalies:{commissionVariations:cV,commissionNote:cN.join(", ")||"Tutte al 20%",feeRoundingMismatches:0}},dates};
+}
+
+// ============ SUPABASE PERSISTENCE ============
+async function saveToDB(weekId, store, storeData, range){
+  if(!supabase)return;
+  try{
+    const key=`${weekId}__${store}`;
+    const{error}=await supabase.from('glovo_invoices').upsert({id:key,week_id:weekId,store_name:store,range_label:range,data:JSON.stringify(storeData),updated_at:new Date().toISOString()},{onConflict:'id'});
+    if(error){console.warn('Supabase save error:',error);document.getElementById('syncStatus').textContent='⚠ Errore salvataggio';document.getElementById('syncStatus').style.color='#EF476F'}
+    else{document.getElementById('syncStatus').textContent='✓ Salvato su cloud';document.getElementById('syncStatus').style.color='#06D6A0'}
+  }catch(e){console.warn('DB save failed:',e)}
+}
+
+async function loadFromDB(){
+  if(!supabase)return false;
+  try{
+    const timeout = new Promise((_,rej) => setTimeout(()=>rej(new Error('timeout')),5000));
+    const query = supabase.from('glovo_invoices').select('*');
+    const{data,error} = await Promise.race([query, timeout]);
+    if(error){console.warn('Supabase load error:',error);return false}
+    if(!data||data.length===0)return false;
+    const loaded={};
+    data.forEach(row=>{
+      if(!loaded[row.week_id])loaded[row.week_id]={};
+      try{loaded[row.week_id][row.store_name]=JSON.parse(row.data)}catch(e){}
+    });
+    Object.keys(loaded).forEach(wid=>{
+      if(!WEEKS_DATA[wid])WEEKS_DATA[wid]={};
+      Object.assign(WEEKS_DATA[wid],loaded[wid]);
+    });
+    document.getElementById('syncStatus').textContent=`✓ ${data.length} fatture da cloud`;
+    document.getElementById('syncStatus').style.color='#06D6A0';
+    return true;
+  }catch(e){console.warn('DB load failed:',e);return false}
+}
+
+// ============ AGGREGATION ============
+function aggregateWeeks(weekIds){
+  const result={};
+  ALL_STORES.forEach(s=>{
+    const base={totalOrders:0,grossRevenue:0,promos:0,platformFees:0,refunds:0,netRevenue:0,cashOrders:0,cashAmount:0,waitTimeFees:0,waitTimeOrders:0,avgOrder:0,commission:20,address:"",invoiceId:"Aggregato",period:"Mese",daily:[],hourly:[],topProducts:[],refundDetails:[],anomalies:{commissionVariations:0,commissionNote:"",feeRoundingMismatches:0}};
+    const dA={},hA={},pA={},refs=[],notes=[];
+    weekIds.forEach(wid=>{const d=WEEKS_DATA[wid]?.[s];if(!d)return;base.totalOrders+=d.totalOrders;base.grossRevenue+=d.grossRevenue;base.promos+=d.promos;base.platformFees+=d.platformFees;base.refunds+=d.refunds;base.netRevenue+=d.netRevenue;base.cashOrders+=d.cashOrders;base.cashAmount+=d.cashAmount;base.waitTimeFees+=d.waitTimeFees;base.waitTimeOrders+=d.waitTimeOrders;base.address=d.address;base.anomalies.commissionVariations+=d.anomalies.commissionVariations;if(d.anomalies.commissionNote)notes.push(d.anomalies.commissionNote);d.daily.forEach(dd=>{if(!dA[dd.day])dA[dd.day]={day:dd.day,orders:0,revenue:0,fees:0,promos:0,refunds:0,net:0};dA[dd.day].orders+=dd.orders;dA[dd.day].revenue+=dd.revenue;dA[dd.day].fees+=dd.fees;dA[dd.day].promos+=dd.promos;dA[dd.day].refunds+=dd.refunds;dA[dd.day].net+=dd.net});d.hourly.forEach(hh=>{hA[hh.hour]=(hA[hh.hour]||0)+hh.orders});d.topProducts.forEach(p=>{pA[p.name]=(pA[p.name]||0)+p.qty});refs.push(...d.refundDetails)});
+    base.avgOrder=base.totalOrders>0?base.grossRevenue/base.totalOrders:0;
+    base.daily=DAYS_ORD.map(d=>dA[d]||{day:d,orders:0,revenue:0,fees:0,promos:0,refunds:0,net:0});
+    base.hourly=Object.entries(hA).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(([h,o])=>({hour:h,orders:o}));
+    base.topProducts=Object.entries(pA).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([n,q])=>({name:n,qty:q}));
+    base.refundDetails=refs.sort((a,b)=>b.amount-a.amount).slice(0,5);
+    base.anomalies.commissionNote=notes.join(" | ");
+    result[s]=base;
+  });
+  return result;
+}
+
+let customDateFrom = '';
+let customDateTo = '';
+
+function getStoreData(){
+  const wc = WEEKS_CONFIG.find(w => w.id === activeWeek);
+  if(wc && wc.isMonth && wc.weekIds){
+    return aggregateWeeks(wc.weekIds);
+  }
+  if(activeWeek === "custom" && customDateFrom && customDateTo){
+    return getCustomRangeData(customDateFrom, customDateTo);
+  }
+  return WEEKS_DATA[activeWeek] || {};
+}
+
+function getCustomRangeData(fromStr, toStr){
+  const from = new Date(fromStr);
+  const to = new Date(toStr);
+  to.setHours(23,59,59);
+  
+  const result = {};
+  
+  ALL_STORES.forEach(storeName => {
+    const base = {totalOrders:0,grossRevenue:0,promos:0,platformFees:0,refunds:0,netRevenue:0,
+      cashOrders:0,cashAmount:0,waitTimeFees:0,waitTimeOrders:0,avgOrder:0,commission:20,
+      address:"",invoiceId:"Custom",period:`${fromStr} → ${toStr}`,daily:[],hourly:[],topProducts:[],refundDetails:[],
+      anomalies:{commissionVariations:0,commissionNote:"",feeRoundingMismatches:0}};
+    const dAcc={},hAcc={},pAcc={},refs=[],notes=[];
+    let hasData = false;
+    
+    Object.keys(WEEKS_DATA).forEach(wid => {
+      const storeData = WEEKS_DATA[wid]?.[storeName];
+      if(!storeData) return;
+      
+      // Parse week start date from period
+      const period = storeData.period || "";
+      const pm = period.match(/(\d{2})\/(\d{2})/);
+      if(!pm) return;
+      const ym = period.match(/(\d{4})/);
+      const yr = ym ? parseInt(ym[1]) : 2026;
+      const weekStartDate = new Date(yr, parseInt(pm[2])-1, parseInt(pm[1]));
+      
+      // Check each day in the week's daily data
+      const dayMap = {"Lun":0,"Mar":1,"Mer":2,"Gio":3,"Ven":4,"Sab":5,"Dom":6,"Dom*":6};
+      let matchedDays = 0;
+      let totalDays = storeData.daily.length;
+      
+      storeData.daily.forEach((dd, idx) => {
+        // Calculate actual date for this daily entry
+        let dayDate;
+        if(dd.date && dd.date.match(/^\d{2}\/\d{2}$/)){
+          // Has explicit date like "16/02"
+          const dp = dd.date.match(/(\d{2})\/(\d{2})/);
+          dayDate = new Date(yr, parseInt(dp[2])-1, parseInt(dp[1]));
+        } else {
+          // Calculate from week start + day offset
+          const dayOffset = dayMap[dd.day];
+          if(dayOffset === undefined) return;
+          dayDate = new Date(weekStartDate);
+          dayDate.setDate(dayDate.getDate() + dayOffset);
+        }
+        
+        // Check if this day falls in the custom range
+        if(dayDate >= from && dayDate <= to){
+          matchedDays++;
+          hasData = true;
+          const dayKey = dd.day;
+          if(!dAcc[dayKey]) dAcc[dayKey]={day:dayKey,orders:0,revenue:0,fees:0,promos:0,refunds:0,net:0};
+          dAcc[dayKey].orders += dd.orders;
+          dAcc[dayKey].revenue += dd.revenue;
+          dAcc[dayKey].fees += dd.fees;
+          dAcc[dayKey].promos += dd.promos;
+          dAcc[dayKey].refunds += dd.refunds;
+          dAcc[dayKey].net += dd.net;
+        }
+      });
+      
+      // If ANY days matched, include proportional share of non-daily data
+      if(matchedDays > 0){
+        const ratio = totalDays > 0 ? matchedDays / totalDays : 0;
+        
+        // If ALL days matched, take full values (more accurate)
+        if(matchedDays === totalDays){
+          base.totalOrders += storeData.totalOrders;
+          base.grossRevenue += storeData.grossRevenue;
+          base.promos += storeData.promos;
+          base.platformFees += storeData.platformFees;
+          base.refunds += storeData.refunds;
+          base.netRevenue += storeData.netRevenue;
+          base.cashOrders += storeData.cashOrders;
+          base.cashAmount += storeData.cashAmount;
+          base.waitTimeFees += storeData.waitTimeFees;
+          base.waitTimeOrders += storeData.waitTimeOrders;
+          base.anomalies.commissionVariations += storeData.anomalies.commissionVariations;
+          if(storeData.anomalies.commissionNote) notes.push(storeData.anomalies.commissionNote);
+          storeData.hourly.forEach(hh => { hAcc[hh.hour]=(hAcc[hh.hour]||0)+hh.orders; });
+          storeData.topProducts.forEach(p => { pAcc[p.name]=(pAcc[p.name]||0)+p.qty; });
+          refs.push(...storeData.refundDetails);
+        } else {
+          // Partial week: use daily sums for financial data, proportional for the rest
+          const dayOrders = Object.values(dAcc).reduce((a,d) => a+d.orders, 0);
+          const dayRevenue = Object.values(dAcc).reduce((a,d) => a+d.revenue, 0);
+          const dayFees = Object.values(dAcc).reduce((a,d) => a+d.fees, 0);
+          const dayPromos = Object.values(dAcc).reduce((a,d) => a+d.promos, 0);
+          const dayRefunds = Object.values(dAcc).reduce((a,d) => a+d.refunds, 0);
+          const dayNet = Object.values(dAcc).reduce((a,d) => a+d.net, 0);
+          
+          base.totalOrders += dayOrders;
+          base.grossRevenue += dayRevenue;
+          base.promos += dayPromos;
+          base.platformFees += dayFees;
+          base.refunds += dayRefunds;
+          base.netRevenue += dayNet;
+          base.cashOrders += Math.round(storeData.cashOrders * ratio);
+          base.cashAmount += Math.round(storeData.cashAmount * ratio * 100)/100;
+          base.waitTimeFees += Math.round(storeData.waitTimeFees * ratio * 100)/100;
+          base.waitTimeOrders += Math.round(storeData.waitTimeOrders * ratio);
+          base.anomalies.commissionVariations += Math.round(storeData.anomalies.commissionVariations * ratio);
+          // Proportional hourly
+          storeData.hourly.forEach(hh => { hAcc[hh.hour]=(hAcc[hh.hour]||0)+Math.round(hh.orders*ratio); });
+          storeData.topProducts.forEach(p => { pAcc[p.name]=(pAcc[p.name]||0)+Math.round(p.qty*ratio); });
+        }
+        base.address = storeData.address;
+      }
+    });
+    
+    if(!hasData) return;
+    
+    base.avgOrder = base.totalOrders > 0 ? base.grossRevenue / base.totalOrders : 0;
+    base.daily = DAYS_ORD.map(d => dAcc[d] || {day:d,orders:0,revenue:0,fees:0,promos:0,refunds:0,net:0});
+    base.hourly = Object.entries(hAcc).sort((a,b)=>parseInt(a[0])-parseInt(b[0])).map(([h,o])=>({hour:h,orders:o}));
+    base.topProducts = Object.entries(pAcc).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([n,q])=>({name:n,qty:q}));
+    base.refundDetails = refs.sort((a,b)=>b.amount-a.amount).slice(0,5);
+    base.anomalies.commissionNote = notes.join(" | ");
+    result[storeName] = base;
+  });
+  
+  return result;
+}
+
+function getComparisonData(SD){
+  return ALL_STORES.filter(s=>SD[s]).map(s=>{const d=SD[s];return{store:s.replace("Piazza ","P.").replace("Ponte ","P."),fullName:s,ordini:d.totalOrders,lordo:d.grossRevenue,netto:d.netRevenue,promos:d.promos,fees:d.platformFees,refunds:d.refunds,avgTicket:d.avgOrder,marginPct:d.grossRevenue>0?d.netRevenue/d.grossRevenue*100:0,waitFees:d.waitTimeFees,waitOrders:d.waitTimeOrders}});
+}
+function getTotals(cd){return cd.reduce((a,s)=>({orders:a.orders+s.ordini,gross:a.gross+s.lordo,net:a.net+s.netto,promos:a.promos+s.promos,fees:a.fees+s.fees,refunds:a.refunds+s.refunds,wait:a.wait+s.waitFees,waitOrders:a.waitOrders+s.waitOrders}),{orders:0,gross:0,net:0,promos:0,fees:0,refunds:0,wait:0,waitOrders:0})}
+
+// ============ FILE HANDLING ============
+document.getElementById('fileInput').addEventListener('change',e=>handleFiles(e.target.files));
+function handleFiles(files){
+  Array.from(files).forEach(f=>{
+    if(!f.name.endsWith('.csv')){addChip(f.name,"Non CSV","err");return}
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const rows=parseCSVText(ev.target.result);
+        if(rows.length<2){addChip(f.name,"File vuoto","err");return}
+        const res=analyzeCSV(rows);
+        // Add to WEEKS_DATA
+        if(!WEEKS_DATA[res.weekId])WEEKS_DATA[res.weekId]={};
+        WEEKS_DATA[res.weekId][res.store]=res.data;
+        // Update store list
+        if(!ALL_STORES.includes(res.store)){ALL_STORES.push(res.store);if(!STORE_COLORS[res.store])STORE_COLORS[res.store]=COLOR_PAL[ALL_STORES.indexOf(res.store)%COLOR_PAL.length]}
+        addChip(f.name,`${res.store} · ${res.data.totalOrders} ord`,"ok");
+        // Save to Supabase
+        saveToDB(res.weekId,res.store,res.data,res.range);
+        rebuildWeeksConfig();
+        render();
+      }catch(err){addChip(f.name,"Errore: "+err.message,"err")}
+    };
+    r.readAsText(f);
+  });
+}
+function addChip(name,info,cls){const el=document.createElement('span');el.className=`file-chip ${cls}`;el.innerHTML=`📄 ${name} — ${info}`;document.getElementById('fileChips').appendChild(el)}
+
+function rebuildWeeksConfig(){
+  // 1. Gather all week IDs with their date info
+  const weekInfos = [];
+  Object.keys(WEEKS_DATA).forEach(wid => {
+    const stores = Object.values(WEEKS_DATA[wid]);
+    if(!stores.length) return;
+    const period = stores[0]?.period || "";
+    const m = period.match(/(\d{2})\/(\d{2})/);
+    let day=1, month=1, year=2026;
+    if(m){ day=parseInt(m[1]); month=parseInt(m[2]); }
+    const ym = period.match(/(\d{4})/);
+    if(ym) year=parseInt(ym[1]);
+    else {
+      // Extract year from weekId (format: w_YYYYMMDD)
+      const wm = wid.match(/w_(\d{4})/);
+      if(wm) year=parseInt(wm[1]);
+    }
+    weekInfos.push({id:wid, period, day, month, year, sortKey: year*10000+month*100+day});
+  });
+  
+  // 2. Sort chronologically
+  weekInfos.sort((a,b) => a.sortKey - b.sortKey);
+  
+  // 3. Group by month
+  const MONTH_NAMES = ["","Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+  const monthGroups = {};
+  weekInfos.forEach(wi => {
+    const key = `${wi.year}-${String(wi.month).padStart(2,'0')}`;
+    if(!monthGroups[key]) monthGroups[key] = [];
+    monthGroups[key].push(wi);
+  });
+  
+  // 4. Build WEEKS_CONFIG
+  WEEKS_CONFIG = [];
+  const monthKeys = Object.keys(monthGroups).sort();
+  
+  monthKeys.forEach(mk => {
+    const weeks = monthGroups[mk];
+    const [yr, mo] = mk.split('-').map(Number);
+    const monthName = MONTH_NAMES[mo] || `Mese ${mo}`;
+    
+    // Add each week with numbered label
+    weeks.forEach((wi, i) => {
+      const label = weeks.length === 1 ? monthName : `${monthName} ${i+1}`;
+      WEEKS_CONFIG.push({id:wi.id, label, range:wi.period, month:mo, year:yr, isWeek:true});
+    });
+    
+    // ALWAYS add month aggregation card
+    const monthId = `month_${yr}_${mo}`;
+    WEEKS_CONFIG.push({id:monthId, label:`📊 ${monthName}`, range:`Mese di ${monthName} ${yr}`, month:mo, year:yr, isMonth:true, weekIds:weeks.map(w=>w.id)});
+  });
+  
+  // 5. ALWAYS add global aggregation (even with 1 month, for consistency)
+  if(monthKeys.length > 0){
+    WEEKS_CONFIG.push({id:"all_months", label:"📊 Totale Aggregato", range:"Tutti i mesi", isMonth:true, isGlobal:true, weekIds:weekInfos.map(w=>w.id)});
+  }
+  
+  // 6. Custom date range
+  WEEKS_CONFIG.push({id:"custom", label:"📅 Personalizzato", range:"Scegli intervallo", isCustom:true});
+  
+  // Update ALL_STORES
+  Object.values(WEEKS_DATA).forEach(wd => {
+    Object.keys(wd).forEach(s => {
+      if(!ALL_STORES.includes(s)){
+        ALL_STORES.push(s);
+        if(!STORE_COLORS[s]) STORE_COLORS[s] = COLOR_PAL[ALL_STORES.length % COLOR_PAL.length];
+      }
+    });
+  });
+}
+
+// ============ DESTROY CHARTS ============
+function destroyCharts(){Object.values(charts).forEach(c=>{try{c.destroy()}catch(e){}});charts={}}
+
+// ============ KPI HELPER ============
+function kpi(lb,vl,sb,accent){return`<div class="kpi"><div class="lb">${lb}</div><div class="vl" style="color:${accent||'#FFF'}">${vl}</div>${sb?`<div class="sb">${sb}</div>`:''}</div>`}
+
+// ============ RENDER ============
+function render(){
+  destroyCharts();
+  const SD=getStoreData();
+  const cd=getComparisonData(SD);
+  const totals=getTotals(cd);
+  
+  // Header
+  const wc=WEEKS_CONFIG.find(w=>w.id===activeWeek);
+  const periodText = activeWeek==='custom' && customDateFrom ? `${customDateFrom} → ${customDateTo}` : wc?.range || "";
+  document.getElementById('hdrSub').textContent=`Dashboard Fatture · ${ALL_STORES.length} Store · ${periodText}`;
+  if(activeStore==="Tutti"){document.getElementById('hdrInfo').textContent=`${totals.orders.toLocaleString("it-IT")} ordini totali`;document.getElementById('hdrPeriod').textContent="Tutti gli store"}
+  else{const d=SD[activeStore];document.getElementById('hdrInfo').textContent=d?`Fattura ${d.invoiceId||"—"}`:"—";document.getElementById('hdrPeriod').textContent=d?.period||""}
+  
+  // Week buttons - grouped by month
+  let wh='';
+  let currentMonth = '';
+  WEEKS_CONFIG.forEach(w=>{
+    const a=activeWeek===w.id;
+    const mo=w.isMonth;
+    const cu=w.isCustom;
+    
+    // Month separator
+    if(w.isWeek){
+      const mKey = `${w.year}-${w.month}`;
+      if(mKey !== currentMonth){
+        if(currentMonth) wh += `<div class="separator" style="width:1px;height:28px;background:#2A2A3A;margin:0 4px"></div>`;
+        currentMonth = mKey;
+      }
+    }
+    if(w.isMonth && !w.isCustom){
+      wh += `<div class="separator" style="width:1px;height:28px;background:#2A2A3A;margin:0 4px"></div>`;
+    }
+    
+    if(cu){
+      wh += `<div class="separator" style="width:1px;height:28px;background:#2A2A3A;margin:0 4px"></div>`;
+      wh += `<button class="wk-btn${a?' active':''}" style="${a?'background:#3A86FF12;border:2px solid #3A86FF;color:#3A86FF':''}" onclick="setWeek('custom')">📅 Custom<span class="rng">Intervallo</span></button>`;
+    } else {
+      const btnStyle = mo 
+        ? (a ? 'background:#FFBA0815;border:2px solid #FFBA08;color:#FFBA08' : 'border:1px solid #FFBA0840;color:#FFBA08;opacity:0.7')
+        : '';
+      wh+=`<button class="wk-btn${a?' active':''}${mo?' month':''}" style="${btnStyle}" onclick="setWeek('${w.id}')">${w.label}<span class="rng">${w.range}</span></button>`;
+    }
+  });
+  document.getElementById('weekSel').innerHTML=wh;
+  
+  // Custom date picker
+  const dpEl = document.getElementById('datePicker');
+  if(activeWeek === 'custom'){
+    dpEl.classList.remove('hidden');
+    // Only rebuild if not already shown (preserve user input)
+    if(!dpEl.dataset.built){
+      dpEl.dataset.built = '1';
+      // Set sensible defaults
+      if(!customDateFrom) customDateFrom = '2026-01-19';
+      if(!customDateTo) customDateTo = '2026-02-22';
+      dpEl.innerHTML = `
+      <div style="display:flex;align-items:center;gap:16px;padding:16px 24px;background:linear-gradient(135deg,#0D1025,#14141F);border-radius:12px;border:1px solid #3A86FF40;margin-bottom:16px;flex-wrap:wrap">
+        <span style="font-size:13px;color:#3A86FF;font-weight:700">📅 Intervallo personalizzato</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:12px;color:#9B9BAB;font-weight:500">Da</span>
+          <input type="date" id="dateFrom" value="${customDateFrom}" 
+            style="background:#0A0A0F;border:1px solid #3A86FF40;border-radius:8px;padding:8px 12px;color:#E8E6DF;font-family:'Space Mono',monospace;font-size:12px;cursor:pointer;outline:none;color-scheme:dark">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:12px;color:#9B9BAB;font-weight:500">A</span>
+          <input type="date" id="dateTo" value="${customDateTo}" 
+            style="background:#0A0A0F;border:1px solid #3A86FF40;border-radius:8px;padding:8px 12px;color:#E8E6DF;font-family:'Space Mono',monospace;font-size:12px;cursor:pointer;outline:none;color-scheme:dark">
+        </div>
+        <button onclick="applyCustomRange()" style="padding:8px 24px;border-radius:8px;border:none;background:linear-gradient(135deg,#3A86FF,#2563EB);color:#FFF;font-weight:700;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;box-shadow:0 2px 8px #3A86FF40">Applica</button>
+        <span id="customInfo" style="font-size:11px;color:#6B6B7B;font-family:'Space Mono',monospace"></span>
+      </div>`;
+    }
+  } else {
+    dpEl.classList.add('hidden');
+    dpEl.dataset.built = '';
+  }
+  
+  // Store buttons
+  let sh='';["Tutti",...ALL_STORES].forEach(s=>{const a=activeStore===s;const c=s==="Tutti"?"#FFBA08":STORE_COLORS[s];sh+=`<button class="st-btn" style="${a?`background:${c}12;border:2px solid ${c};color:${c}`:'border:1px solid #2A2A3A'}" onclick="setStore('${s}')">${s!=="Tutti"?`<span class="dot" style="background:${c}"></span>`:'🏠'} ${s}</button>`});
+  document.getElementById('storeSel').innerHTML=sh;
+  
+  // Tabs
+  const tabs=[{id:"overview",label:"Overview"},{id:"daily",label:"Andamento"},{id:"products",label:"Prodotti"},{id:"anomalies",label:"Anomalie"}];
+  let th='';tabs.forEach(t=>{th+=`<button class="tab-btn${activeTab===t.id?' active':''}" onclick="setTab('${t.id}')">${t.label}</button>`});
+  document.getElementById('tabSel').innerHTML=th;
+  
+  // Main content
+  const main=document.getElementById('main');
+  if(activeStore==="Tutti") renderAll(main,SD,cd,totals);
+  else renderSingle(main,SD[activeStore],activeStore,SD);
+}
+
+function setWeek(w){
+  if(w !== 'custom'){
+    // Reset custom picker state so it rebuilds next time
+    const dp = document.getElementById('datePicker');
+    if(dp) dp.dataset.built = '';
+  }
+  activeWeek=w;activeStore="Tutti";activeTab="overview";render();
+}
+function updateCustomRange(){
+  const f=document.getElementById('dateFrom');
+  const t=document.getElementById('dateTo');
+  if(f)customDateFrom=f.value;
+  if(t)customDateTo=t.value;
+}
+function applyCustomRange(){
+  updateCustomRange();
+  if(!customDateFrom || !customDateTo){
+    const info = document.getElementById('customInfo');
+    if(info){info.textContent='⚠ Seleziona entrambe le date';info.style.color='#EF476F'}
+    return;
+  }
+  // Don't rebuild the date picker on re-render
+  const SD = getCustomRangeData(customDateFrom, customDateTo);
+  const storeCount = Object.keys(SD).length;
+  const info = document.getElementById('customInfo');
+  if(storeCount === 0){
+    if(info){info.textContent='⚠ Nessun dato in questo intervallo';info.style.color='#EF476F'}
+    return;
+  }
+  const totalOrd = Object.values(SD).reduce((a,s)=>a+s.totalOrders,0);
+  if(info){info.textContent=`✓ ${storeCount} store · ${totalOrd.toLocaleString('it-IT')} ordini`;info.style.color='#06D6A0'}
+  
+  // Re-render content only (not selectors)
+  destroyCharts();
+  const cd = getComparisonData(SD);
+  const totals = getTotals(cd);
+  const main = document.getElementById('main');
+  
+  // Update header
+  document.getElementById('hdrSub').textContent=`Dashboard Fatture · ${ALL_STORES.length} Store · ${customDateFrom} → ${customDateTo}`;
+  document.getElementById('hdrInfo').textContent=`${totalOrd.toLocaleString("it-IT")} ordini totali`;
+  document.getElementById('hdrPeriod').textContent="Intervallo personalizzato";
+  
+  if(activeStore==="Tutti") renderAll(main,SD,cd,totals);
+  else renderSingle(main,SD[activeStore],activeStore,SD);
+}
+function setStore(s){activeStore=s;activeTab="overview";render()}
+function setTab(t){activeTab=t;render()}
+
+// ============ ALL VIEW ============
+function renderAll(el,SD,cd,totals){
+  if(activeTab==="overview") renderAllOverview(el,SD,cd,totals);
+  else if(activeTab==="daily") renderAllDaily(el,SD,cd);
+  else if(activeTab==="products") renderAllProducts(el,SD);
+  else if(activeTab==="anomalies") renderAllAnomalies(el,SD,cd,totals);
+}
+
+function renderAllOverview(el,SD,cd,totals){
+  let h=`<div class="kpi-row">${kpi("Ordini Totali",totals.orders.toLocaleString("it-IT"),"4 store combinati")}${kpi("Fatturato Lordo","€"+fmt(totals.gross),"","#FFBA08")}${kpi("Ricavo Netto","€"+fmt(totals.net),(totals.net/totals.gross*100).toFixed(1)+"% del lordo","#06D6A0")}${kpi("Costi Totali","€"+fmt(totals.promos+totals.fees+totals.refunds),"","#EF476F")}</div>`;
+  // Charts
+  h+=`<div class="g2"><div class="card"><h3>Fatturato per Store</h3><div class="chart-box"><canvas id="cRevenue"></canvas></div></div><div class="card"><h3>Ordini per Store</h3><div class="chart-box"><canvas id="cOrders"></canvas></div></div></div>`;
+  // Store cards
+  h+=`<div class="g4">`;
+  cd.forEach(s=>{
+    h+=`<div class="store-card" style="border:1px solid ${STORE_COLORS[s.fullName]}30" onclick="setStore('${s.fullName}')">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px"><span class="dot" style="width:10px;height:10px;border-radius:50%;background:${STORE_COLORS[s.fullName]}"></span><span style="font-size:13px;font-weight:700;color:${STORE_COLORS[s.fullName]}">${s.fullName}</span></div>
+      <div class="row"><span>Ordini</span><span class="mono" style="color:#E8E6DF;font-weight:600">${s.ordini}</span></div>
+      <div class="row"><span>Lordo</span><span class="mono" style="color:#FFBA08;font-weight:600">€${fmt(s.lordo)}</span></div>
+      <div class="row"><span>Netto</span><span class="mono" style="color:#06D6A0;font-weight:600">€${fmt(s.netto)}</span></div>
+      <div class="row"><span>Scontrino</span><span class="mono">€${fmt(s.avgTicket)}</span></div>
+      <div class="row"><span>Margine</span><span class="mono" style="color:${s.marginPct>=68?'#06D6A0':'#FFBA08'}">${s.marginPct.toFixed(1)}%</span></div>
+      <div class="row"><span>Rimborsi</span><span class="mono" style="color:${s.refunds>100?'#EF476F':'#9B9BAB'}">€${fmt(s.refunds)}</span></div>
+    </div>`;
+  });
+  h+=`</div>`;
+  el.innerHTML=h;
+  setTimeout(()=>{
+    charts.rev=new Chart(document.getElementById('cRevenue'),{type:'bar',data:{labels:cd.map(s=>s.store),datasets:[{label:'Lordo',data:cd.map(s=>s.lordo),backgroundColor:'#FFFFFF18',borderColor:'#FFFFFF30',borderWidth:1},{label:'Netto',data:cd.map(s=>s.netto),backgroundColor:cd.map(s=>STORE_COLORS[s.fullName]),borderWidth:0},{label:'Commissioni',data:cd.map(s=>s.fees),backgroundColor:'#EF476F50',borderWidth:0},{label:'Promozioni',data:cd.map(s=>s.promos),backgroundColor:'#FFBA0850',borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9B9BAB',font:{size:10}}}},scales:{x:{ticks:{color:'#6B6B7B'},grid:{color:'#1E1E2E'}},y:{ticks:{color:'#6B6B7B',callback:v=>'€'+fmtK(v)},grid:{color:'#1E1E2E'}}}}});
+    charts.ord=new Chart(document.getElementById('cOrders'),{type:'bar',data:{labels:cd.map(s=>s.store),datasets:[{data:cd.map(s=>s.ordini),backgroundColor:cd.map(s=>STORE_COLORS[s.fullName])}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6B6B7B'},grid:{color:'#1E1E2E'}},y:{ticks:{color:'#6B6B7B'},grid:{color:'#1E1E2E'}}}}});
+  },50);
+}
+
+function renderAllDaily(el,SD,cd){
+  let h=`<div class="card"><h3>Ordini Giornalieri per Store</h3><div class="chart-box tall"><canvas id="cDailyOrd"></canvas></div></div>`;
+  h+=`<div class="card"><h3>Ricavo Netto Giornaliero per Store</h3><div class="chart-box tall"><canvas id="cDailyNet"></canvas></div></div>`;
+  h+=`<div class="card"><h3>Distribuzione Oraria — Tutti gli Store</h3><div class="chart-box tall"><canvas id="cHourly"></canvas></div></div>`;
+  el.innerHTML=h;
+  setTimeout(()=>{
+    const ds_o=ALL_STORES.filter(s=>SD[s]).map(s=>({label:s,data:SD[s].daily.map(d=>d.orders),backgroundColor:STORE_COLORS[s]+'60',borderColor:STORE_COLORS[s],borderWidth:1}));
+    charts.dOrd=new Chart(document.getElementById('cDailyOrd'),{type:'bar',data:{labels:DAYS_ORD,datasets:ds_o},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9B9BAB',font:{size:10}}}},scales:{x:{ticks:{color:'#6B6B7B'},grid:{color:'#1E1E2E'}},y:{ticks:{color:'#6B6B7B'},grid:{color:'#1E1E2E'}}}}});
+    const ds_n=ALL_STORES.filter(s=>SD[s]).map(s=>({label:s,data:SD[s].daily.map(d=>d.net),borderColor:STORE_COLORS[s],backgroundColor:STORE_COLORS[s]+'20',tension:.3,fill:false,pointRadius:4,pointBackgroundColor:STORE_COLORS[s]}));
+    charts.dNet=new Chart(document.getElementById('cDailyNet'),{type:'line',data:{labels:DAYS_ORD,datasets:ds_n},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9B9BAB',font:{size:10}}}},scales:{x:{ticks:{color:'#6B6B7B'},grid:{color:'#1E1E2E'}},y:{ticks:{color:'#6B6B7B',callback:v=>'€'+fmtK(v)},grid:{color:'#1E1E2E'}}}}});
+    const allH={};ALL_STORES.forEach(s=>{if(SD[s])SD[s].hourly.forEach(h=>{allH[h.hour]=(allH[h.hour]||0)+h.orders})});
+    const hLabels=Object.keys(allH).sort();
+    const ds_h=ALL_STORES.filter(s=>SD[s]).map(s=>{const hMap={};SD[s].hourly.forEach(h=>{hMap[h.hour]=h.orders});return{label:s,data:hLabels.map(h=>hMap[h]||0),borderColor:STORE_COLORS[s],backgroundColor:STORE_COLORS[s]+'25',fill:true,tension:.3}});
+    charts.hr=new Chart(document.getElementById('cHourly'),{type:'line',data:{labels:hLabels.map(h=>h+':00'),datasets:ds_h},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9B9BAB',font:{size:10}}}},scales:{x:{ticks:{color:'#6B6B7B'},grid:{color:'#1E1E2E'}},y:{ticks:{color:'#6B6B7B'},grid:{color:'#1E1E2E'}}}}});
+  },50);
+}
+
+function renderAllProducts(el,SD){
+  let h=`<div class="g2">`;
+  ALL_STORES.filter(s=>SD[s]).forEach(s=>{
+    h+=`<div class="card" style="border:1px solid ${STORE_COLORS[s]}20"><h3 style="color:${STORE_COLORS[s]};display:flex;align-items:center;gap:8px"><span style="width:8px;height:8px;border-radius:50%;background:${STORE_COLORS[s]}"></span>${s}</h3>`;
+    SD[s].topProducts.slice(0,7).forEach((p,i)=>{const max=SD[s].topProducts[0].qty;h+=`<div class="rk-row"><span style="width:20px;font-size:10px;font-family:'Space Mono',monospace;color:${i<3?STORE_COLORS[s]:'#6B6B7B'};font-weight:700;text-align:right">#${i+1}</span><div class="rk-bar-bg"><div class="rk-bar" style="width:${(p.qty/max)*100}%;background:${STORE_COLORS[s]}20;display:flex;align-items:center;padding-left:8px"><span style="font-size:11px;color:#E8E6DF;white-space:nowrap">${p.name}</span></div></div><span class="mono" style="font-size:11px;font-weight:600;min-width:28px;text-align:right">${p.qty}</span></div>`});
+    h+=`</div>`;
+  });
+  h+=`</div>`;
+  el.innerHTML=h;
+}
+
+function renderAllAnomalies(el,SD,cd,totals){
+  let h=`<div class="kpi-row">${kpi("Rimborsi Totali","€"+fmt(totals.refunds),(totals.refunds/totals.gross*100).toFixed(2)+"% del lordo · su "+totals.orders.toLocaleString("it-IT")+" ordini","#EF476F")}${kpi("Wait Time Fee","€"+fmt(totals.wait),totals.waitOrders+" ordini penalizzati ("+(totals.waitOrders/totals.orders*100).toFixed(1)+"%)","#FFBA08")}${kpi("Costo Anomalie","€"+fmt(totals.refunds+totals.wait),"Rimborsi + Wait Time Fee","#FF6B6B")}${kpi("Promozioni","€"+fmt(totals.promos),(totals.promos/totals.gross*100).toFixed(1)+"% del lordo","#9B5DE5")}</div>`;
+  
+  // Cross-store table
+  h+=`<div class="card acard"><h3 style="color:#EF476F">⚠️ Report Anomalie Cross-Store</h3><div style="overflow-x:auto"><table><thead><tr>`;
+  ["Store","Rimborsi €","N° Rimb.","% Lordo","Wait Fee €","N° Wait","% Ord. Wait","Promo €","% Promo","Margine"].forEach(c=>h+=`<th>${c}</th>`);
+  h+=`</tr></thead><tbody>`;
+  const mxRef=Math.max(...cd.map(s=>s.refunds/s.lordo)),mxWait=Math.max(...cd.map(s=>s.waitOrders/s.ordini)),mxPro=Math.max(...cd.map(s=>s.promos/s.lordo));
+  cd.forEach(s=>{const rP=s.refunds/s.lordo*100,wP=s.waitOrders/s.ordini*100,pP=s.promos/s.lordo*100;const wr=s.refunds/s.lordo>=mxRef-.0001,ww=s.waitOrders/s.ordini>=mxWait-.0001,wp=s.promos/s.lordo>=mxPro-.0001;
+    h+=`<tr><td style="font-weight:600;color:${STORE_COLORS[s.fullName]}">${s.fullName}</td><td class="mono" style="color:${s.refunds>150?'#EF476F':'#E8E6DF'};font-weight:600">€${fmt(s.refunds)}</td><td style="color:#9B9BAB">${SD[s.fullName].refundDetails.length}+</td><td class="mono" style="color:${wr?'#EF476F':'#9B9BAB'};font-weight:${wr?700:400}">${rP.toFixed(2)}%${wr?' ⚠':''}</td><td class="mono" style="color:${s.waitFees>20?'#FFBA08':'#9B9BAB'}">€${fmt(s.waitFees)}</td><td style="color:${s.waitOrders>20?'#FFBA08':'#9B9BAB'}">${s.waitOrders}</td><td class="mono" style="color:${ww?'#FFBA08':'#9B9BAB'};font-weight:${ww?700:400}">${wP.toFixed(1)}%${ww?' ⚠':''}</td><td class="mono">€${fmt(s.promos)}</td><td class="mono" style="color:${wp?'#9B5DE5':'#6B6B7B'};font-weight:${wp?700:400}">${pP.toFixed(1)}%${wp?' ⚠':''}</td><td class="mono" style="color:${s.marginPct>=68?'#06D6A0':s.marginPct>=67?'#FFBA08':'#EF476F'};font-weight:600">${s.marginPct.toFixed(1)}%</td></tr>`});
+  h+=`<tr style="border-top:2px solid #2A2A3A;font-weight:700"><td>RETE</td><td class="mono" style="color:#EF476F">€${fmt(totals.refunds)}</td><td></td><td class="mono" style="color:#9B9BAB">${(totals.refunds/totals.gross*100).toFixed(2)}%</td><td class="mono" style="color:#FFBA08">€${fmt(totals.wait)}</td><td style="color:#9B9BAB">${totals.waitOrders}</td><td class="mono">${(totals.waitOrders/totals.orders*100).toFixed(1)}%</td><td class="mono">€${fmt(totals.promos)}</td><td class="mono">${(totals.promos/totals.gross*100).toFixed(1)}%</td><td class="mono" style="color:#06D6A0">${(totals.net/totals.gross*100).toFixed(1)}%</td></tr>`;
+  h+=`</tbody></table></div></div>`;
+  
+  // Rankings
+  h+=`<div class="g2">${mkRanking("CLASSIFICA RIMBORSI (% su lordo)","#EF476F",cd,s=>s.refunds/s.lordo*100,v=>v.toFixed(2)+"%",s=>"€"+fmt(s.refunds))}${mkRanking("CLASSIFICA WAIT TIME (% ordini penalizzati)","#FFBA08",cd,s=>s.waitOrders/s.ordini*100,v=>v.toFixed(1)+"%",s=>s.waitOrders+" ord.")}</div>`;
+  h+=`<div class="g2">${mkRanking("CLASSIFICA PROMOZIONI (% su lordo)","#9B5DE5",cd,s=>s.promos/s.lordo*100,v=>v.toFixed(1)+"%",s=>"€"+fmt(s.promos))}${mkRanking("CLASSIFICA MARGINE NETTO","#06D6A0",cd,s=>s.marginPct,v=>v.toFixed(1)+"%",s=>"€"+fmt(s.netto))}</div>`;
+  
+  // Dynamic Analysis
+  h+=`<div class="card"><h3>🔍 Analisi Dettagliata</h3><div class="g2">`;
+  const sortBy=(fn,desc=true)=>[...cd].sort((a,b)=>desc?fn(b)-fn(a):fn(a)-fn(b));
+  const rW=sortBy(s=>s.refunds/s.lordo)[0],rB=sortBy(s=>s.refunds/s.lordo,false)[0];
+  const wW=sortBy(s=>s.waitOrders/s.ordini)[0],wB=sortBy(s=>s.waitOrders/s.ordini,false)[0];
+  const mB=sortBy(s=>s.marginPct)[0],mW=sortBy(s=>s.marginPct,false)[0];
+  const pW=sortBy(s=>s.promos/s.lordo)[0];
+  const findings=[
+    {tag:"RIMBORSI",color:"#EF476F",title:`${rW.fullName} ha il peggior tasso rimborsi`,text:`${(rW.refunds/rW.lordo*100).toFixed(2)}% del lordo (€${fmt(rW.refunds)}). Il migliore è ${rB.fullName} con ${(rB.refunds/rB.lordo*100).toFixed(2)}%. Differenza: €${fmt(rW.refunds-rB.refunds)} di mancato incasso.`},
+    {tag:"WAIT TIME",color:"#FFBA08",title:`${wW.fullName} ha più ritardi cucina`,text:`${(wW.waitOrders/wW.ordini*100).toFixed(1)}% degli ordini penalizzati (${wW.waitOrders} su ${wW.ordini}). Il migliore è ${wB.fullName} (${(wB.waitOrders/wB.ordini*100).toFixed(1)}%). Penale media: €${wW.waitOrders>0?(wW.waitFees/wW.waitOrders).toFixed(2):'0.00'}/ordine.`},
+    {tag:"MARGINE",color:"#06D6A0",title:`${mB.fullName} è lo store più efficiente`,text:`Margine netto ${mB.marginPct.toFixed(1)}% vs ${mW.marginPct.toFixed(1)}% di ${mW.fullName}. Divario di ${(mB.marginPct-mW.marginPct).toFixed(1)} punti. Su €${fmt(mW.lordo)} di lordo, allinearsi genererebbe €${fmt(mW.lordo*(mB.marginPct-mW.marginPct)/100)} in più di netto.`},
+    {tag:"PROMOZIONI",color:"#9B5DE5",title:`${pW.fullName} spende di più in promo`,text:`${(pW.promos/pW.lordo*100).toFixed(1)}% del lordo (€${fmt(pW.promos)}). Media rete: ${(totals.promos/totals.gross*100).toFixed(1)}%. Valutare se l'investimento promozionale genera volume sufficiente.`},
+  ];
+  findings.forEach(f=>{h+=`<div style="background:#0A0A0F;border-radius:10px;padding:18px;border:1px solid ${f.color}20"><span class="tag" style="background:${f.color}20;color:${f.color}">${f.tag}</span><p style="font-size:13px;color:#E8E6DF;margin-top:10px;font-weight:600">${f.title}</p><p style="font-size:12px;color:#9B9BAB;margin-top:6px;line-height:1.6">${f.text}</p></div>`});
+  h+=`</div></div>`;
+  el.innerHTML=h;
+}
+
+function mkRanking(title,color,data,fn,fmtV,subFn){
+  const sorted=[...data].sort((a,b)=>fn(b)-fn(a));const mx=Math.max(...data.map(fn));
+  let h=`<div class="card"><span class="tag" style="background:${color}20;color:${color}">${title}</span>`;
+  sorted.forEach((s,i)=>{const v=fn(s);const pct=mx>0?(v/mx)*100:0;
+    h+=`<div class="rk-row" style="margin-top:${i===0?12:8}px"><span style="font-size:12px;font-weight:700;color:${i===0?color:'#6B6B7B'};width:18px">${i+1}.</span><span style="color:${STORE_COLORS[s.fullName]};font-weight:600;font-size:12px;width:110px">${s.fullName}</span><div class="rk-bar-bg"><div class="rk-bar" style="width:${pct}%;background:${i===0?color+'30':color+'15'}"></div></div><span class="mono" style="font-size:11px;font-weight:600;color:${i===0?color:'#9B9BAB'};min-width:50px;text-align:right">${fmtV(v)}</span><span class="mono" style="font-size:10px;color:#6B6B7B;min-width:65px;text-align:right">${subFn(s)}</span></div>`});
+  h+=`</div>`;return h;
+}
+
+// ============ SINGLE STORE VIEW ============
+function renderSingle(el,data,storeName,SD){
+  if(!data){el.innerHTML=`<div class="card"><p style="color:#6B6B7B">Nessun dato per ${storeName}.</p></div>`;return}
+  if(activeTab==="overview") renderSingleOverview(el,data,storeName);
+  else if(activeTab==="daily") renderSingleDaily(el,data,storeName);
+  else if(activeTab==="products") renderSingleProducts(el,data,storeName);
+  else if(activeTab==="anomalies") renderSingleAnomalies(el,data,storeName);
+}
+
+function renderSingleOverview(el,data,sn){
+  const c=STORE_COLORS[sn];
+  let h=`<div class="kpi-row">${kpi("Ordini",data.totalOrders.toLocaleString("it-IT"),"Scontrino medio €"+fmt(data.avgOrder))}${kpi("Fatturato Lordo","€"+fmt(data.grossRevenue),"","#FFBA08")}${kpi("Ricavo Netto","€"+fmt(data.netRevenue),(data.netRevenue/data.grossRevenue*100).toFixed(1)+"% del lordo","#06D6A0")}${kpi("Rimborsi","€"+fmt(data.refunds),(data.refunds/data.grossRevenue*100).toFixed(2)+"% del lordo","#EF476F")}</div>`;
+  h+=`<div class="g21"><div class="card"><h3>Scomposizione Settimanale</h3><div class="chart-box"><canvas id="cWeekly"></canvas></div></div><div class="card"><h3>Struttura Costi</h3><div class="chart-box"><canvas id="cPie"></canvas></div><div style="display:flex;flex-direction:column;gap:6px;margin-top:12px">`;
+  [{l:"Commissioni",v:data.platformFees,c:"#E85D04"},{l:"Promozioni",v:data.promos,c:"#FFBA08"},{l:"Rimborsi",v:data.refunds,c:"#EF476F"}].forEach(x=>{h+=`<div style="display:flex;align-items:center;gap:8px;font-size:11px"><span style="width:8px;height:8px;border-radius:2px;background:${x.c}"></span><span style="color:#9B9BAB;flex:1">${x.l}</span><span class="mono" style="color:#E8E6DF">€${fmt(x.v)}</span></div>`});
+  h+=`</div></div></div>`;
+  h+=`<div class="kpi-row">${kpi("Cash Orders",data.cashOrders,"€"+fmt(data.cashAmount))}${kpi("Wait Time Fee","€"+fmt(data.waitTimeFees),data.waitTimeOrders+" ordini con penale","#FFBA08")}${kpi("Promozioni","€"+fmt(data.promos),(data.promos/data.grossRevenue*100).toFixed(1)+"% del lordo")}${kpi("Commissione Media",data.commission+"%","€"+fmt(data.platformFees)+" totali")}</div>`;
+  el.innerHTML=h;
+  setTimeout(()=>{
+    charts.wk=new Chart(document.getElementById('cWeekly'),{type:'bar',data:{labels:data.daily.map(d=>d.day),datasets:[{label:'Netto',data:data.daily.map(d=>d.net),backgroundColor:c,borderWidth:0},{label:'Commissioni',data:data.daily.map(d=>d.fees),backgroundColor:'#EF476F80',borderWidth:0},{label:'Promozioni',data:data.daily.map(d=>d.promos),backgroundColor:'#FFBA0880',borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9B9BAB',font:{size:10}}}},scales:{x:{stacked:true,ticks:{color:'#6B6B7B'},grid:{color:'#1E1E2E'}},y:{stacked:true,ticks:{color:'#6B6B7B',callback:v=>'€'+fmtK(v)},grid:{color:'#1E1E2E'}}}}});
+    charts.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:['Commissioni','Promozioni','Rimborsi'],datasets:[{data:[data.platformFees,data.promos,data.refunds],backgroundColor:['#E85D0480','#FFBA0880','#EF476F80'],borderColor:['#E85D04','#FFBA08','#EF476F'],borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9B9BAB',font:{size:10}}}}}});
+  },50);
+}
+
+function renderSingleDaily(el,data,sn){
+  const c=STORE_COLORS[sn];
+  let h=`<div class="card"><h3>Dettaglio Giornaliero</h3><div style="overflow-x:auto"><table><thead><tr>`;
+  ["Giorno","Ordini","Lordo","Promozioni","Commissioni","Rimborsi","Netto"].forEach(c=>h+=`<th>${c}</th>`);
+  h+=`</tr></thead><tbody>`;
+  data.daily.forEach(d=>{h+=`<tr><td style="font-weight:600">${d.day} ${d.date||''}</td><td class="mono">${d.orders}</td><td class="mono">€${fmt(d.revenue)}</td><td class="mono" style="color:#FFBA08">€${fmt(d.promos)}</td><td class="mono" style="color:#E85D04">€${fmt(d.fees)}</td><td class="mono" style="color:${d.refunds>20?'#EF476F':'#9B9BAB'}">€${fmt(d.refunds)}</td><td class="mono" style="color:#06D6A0;font-weight:700">€${fmt(d.net)}</td></tr>`});
+  h+=`</tbody></table></div></div>`;
+  h+=`<div class="card"><h3>Distribuzione Oraria</h3><div class="chart-box"><canvas id="cHr"></canvas></div></div>`;
+  el.innerHTML=h;
+  setTimeout(()=>{
+    charts.hr=new Chart(document.getElementById('cHr'),{type:'line',data:{labels:data.hourly.map(h=>h.hour+':00'),datasets:[{label:'Ordini',data:data.hourly.map(h=>h.orders),borderColor:c,backgroundColor:c+'30',fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6B6B7B'},grid:{color:'#1E1E2E'}},y:{ticks:{color:'#6B6B7B'},grid:{color:'#1E1E2E'}}}}});
+  },50);
+}
+
+function renderSingleProducts(el,data,sn){
+  const c=STORE_COLORS[sn];
+  let h=`<div class="card"><h3>Classifica Prodotti — ${sn}</h3>`;
+  data.topProducts.forEach((p,i)=>{const max=data.topProducts[0].qty;const pct=(p.qty/max)*100;
+    h+=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span style="width:24px;font-size:12px;font-family:'Space Mono',monospace;color:${i<3?c:'#6B6B7B'};font-weight:700;text-align:right">#${i+1}</span><div style="flex:1;background:#1A1A2E;border-radius:6px;height:36px;overflow:hidden"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${c}30,${c}12);border-radius:6px;display:flex;align-items:center;padding-left:12px"><span style="font-size:13px;color:#E8E6DF;font-weight:500;white-space:nowrap">${p.name}</span></div></div><span class="mono" style="font-size:14px;font-weight:700;min-width:40px;text-align:right">${p.qty}</span></div>`});
+  h+=`</div>`;
+  el.innerHTML=h;
+}
+
+function renderSingleAnomalies(el,data,sn){
+  let h=`<div class="kpi-row">${kpi("Rimborsi","€"+fmt(data.refunds),(data.refunds/data.grossRevenue*100).toFixed(2)+"% del lordo · "+data.refundDetails.length+"+ ordini","#EF476F")}${kpi("Wait Time Fee","€"+fmt(data.waitTimeFees),data.waitTimeOrders+" ordini ("+(data.waitTimeOrders/data.totalOrders*100).toFixed(1)+"% del totale)","#FFBA08")}${kpi("Promozioni","€"+fmt(data.promos),(data.promos/data.grossRevenue*100).toFixed(1)+"% del lordo","#9B5DE5")}${kpi("Costi su Lordo",((data.promos+data.platformFees+data.refunds)/data.grossRevenue*100).toFixed(1)+"%","€"+fmt(data.promos+data.platformFees+data.refunds)+" totale trattenuto","#FF6B6B")}</div>`;
+  
+  // Waterfall
+  h+=`<div class="card acard"><h3 style="color:#EF476F">⚠️ Anomalie — ${sn}</h3><p style="font-size:11px;color:#6B6B7B;margin-bottom:12px;text-transform:uppercase;letter-spacing:.05em">Scomposizione dal Lordo al Netto</p>`;
+  [{l:"Fatturato Lordo",v:data.grossRevenue,c:"#FFBA08",p:100},{l:"− Promozioni Partner",v:-data.promos,c:"#9B5DE5",p:-(data.promos/data.grossRevenue*100)},{l:"− Commissioni Glovo (20%)",v:-data.platformFees,c:"#3A86FF",p:-(data.platformFees/data.grossRevenue*100)},{l:"− Rimborsi",v:-data.refunds,c:"#EF476F",p:-(data.refunds/data.grossRevenue*100)},{l:"= Ricavo Netto",v:data.netRevenue,c:"#06D6A0",p:(data.netRevenue/data.grossRevenue*100)}].forEach((r,i)=>{
+    const bold=i===0||i===4;h+=`<div class="wf-row"><span class="wf-label" style="color:${r.c};font-weight:${bold?700:400}">${r.l}</span><div class="wf-bar-bg"><div class="wf-bar" style="width:${Math.abs(r.p)}%;background:${r.c}30"></div></div><span class="mono" style="font-size:12px;font-weight:600;color:${r.c};min-width:90px;text-align:right">${r.v>=0?'':'−'}€${fmt(Math.abs(r.v))}</span><span class="mono" style="font-size:10px;color:#6B6B7B;min-width:50px;text-align:right">${Math.abs(r.p).toFixed(1)}%</span></div>`});
+  
+  // Detail cards
+  h+=`<div class="g3" style="margin-top:16px">`;
+  h+=`<div style="background:#0A0A0F;border-radius:10px;padding:16px;border:1px solid #EF476F20"><span class="tag" style="background:#EF476F20;color:#EF476F">RIMBORSI</span><p class="mono" style="font-size:20px;font-weight:700;color:#EF476F;margin-top:8px">€${fmt(data.refunds)}</p><p style="font-size:11px;color:#9B9BAB;margin-top:4px">${(data.refunds/data.grossRevenue*100).toFixed(2)}% del lordo</p><p style="font-size:11px;color:#9B9BAB;margin-top:2px">Media: €${data.refundDetails.length>0?fmt(data.refunds/data.refundDetails.length):'0,00'}</p></div>`;
+  h+=`<div style="background:#0A0A0F;border-radius:10px;padding:16px;border:1px solid #FFBA0820"><span class="tag" style="background:#FFBA0820;color:#FFBA08">WAIT TIME</span><p class="mono" style="font-size:20px;font-weight:700;color:#FFBA08;margin-top:8px">${data.waitTimeOrders}</p><p style="font-size:11px;color:#9B9BAB;margin-top:4px">${(data.waitTimeOrders/data.totalOrders*100).toFixed(1)}% ordini penalizzati</p><p style="font-size:11px;color:#9B9BAB;margin-top:2px">Penale media: €${data.waitTimeOrders>0?fmt(data.waitTimeFees/data.waitTimeOrders):'0,00'}</p></div>`;
+  h+=`<div style="background:#0A0A0F;border-radius:10px;padding:16px;border:1px solid #3A86FF20"><span class="tag" style="background:#3A86FF20;color:#3A86FF">COMMISSIONI</span><p class="mono" style="font-size:20px;font-weight:700;color:#3A86FF;margin-top:8px">${data.anomalies.commissionVariations}</p><p style="font-size:11px;color:#9B9BAB;margin-top:4px">ordini con commissione ≠ 20%</p><p style="font-size:11px;color:#9B9BAB;margin-top:2px">${data.anomalies.commissionNote}</p></div>`;
+  h+=`</div></div>`;
+  
+  // Refund table
+  if(data.refundDetails.length>0){
+    h+=`<div class="card"><h3 style="color:#EF476F">Top Rimborsi — €${fmt(data.refunds)} totali</h3><p style="font-size:12px;color:#6B6B7B;margin-bottom:16px">${data.refundDetails.length} rimborsi maggiori per importo</p><table><thead><tr>`;
+    ["Codice","Data/Ora","Importo","% su Tot. Rimb.","Dettaglio"].forEach(c=>h+=`<th>${c}</th>`);
+    h+=`</tr></thead><tbody>`;
+    data.refundDetails.forEach(r=>{h+=`<tr><td class="mono" style="color:#9B9BAB;font-size:11px">${r.code}</td><td>${r.date}</td><td class="mono" style="color:#EF476F;font-weight:600">€${fmt(r.amount)}</td><td class="mono" style="color:#9B9BAB;font-size:11px">${(r.amount/data.refunds*100).toFixed(1)}%</td><td style="color:#9B9BAB">${r.product}</td></tr>`});
+    h+=`</tbody></table></div>`;
+  }
+  el.innerHTML=h;
+}
+
+// ============ INIT ============
+// ============ DELETE MANAGEMENT ============
+let deleteMode = false;
+let deleteSelections = new Set();
+
+function toggleDeleteMode(){
+  deleteMode = !deleteMode;
+  const panel = document.getElementById('deletePanel');
+  const btn = document.getElementById('btnDelete');
+  if(deleteMode){
+    panel.classList.remove('hidden');
+    btn.style.background = '#EF476F20';
+    btn.textContent = '🗑 Gestisci (attivo)';
+    renderDeleteList();
+  } else {
+    panel.classList.add('hidden');
+    btn.style.background = 'transparent';
+    btn.textContent = '🗑 Gestisci';
+    deleteSelections.clear();
+  }
+}
+
+function renderDeleteList(){
+  const MONTH_NAMES = ["","Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+  const el = document.getElementById('deleteList');
+  const items = [];
+  
+  Object.keys(WEEKS_DATA).forEach(wid => {
+    const stores = Object.values(WEEKS_DATA[wid]);
+    if(!stores.length) return;
+    const period = stores[0]?.period || wid;
+    const storeCount = Object.keys(WEEKS_DATA[wid]).length;
+    const totalOrd = stores.reduce((a,s) => a + (s.totalOrders||0), 0);
+    
+    // Parse date for sorting
+    const pm = period.match(/(\d{2})\/(\d{2})/);
+    const ym = period.match(/(\d{4})/);
+    const wm = wid.match(/w_(\d{4})(\d{2})(\d{2})/);
+    let year = ym ? parseInt(ym[1]) : (wm ? parseInt(wm[1]) : 2026);
+    let month = pm ? parseInt(pm[2]) : (wm ? parseInt(wm[2]) : 1);
+    let day = pm ? parseInt(pm[1]) : (wm ? parseInt(wm[3]) : 1);
+    const monthName = MONTH_NAMES[month] || `Mese ${month}`;
+    
+    items.push({
+      wid, period, storeCount, totalOrd, year, month, day, monthName,
+      sortKey: year*10000+month*100+day
+    });
+  });
+  
+  items.sort((a,b) => a.sortKey - b.sortKey);
+  
+  let html = '';
+  items.forEach(it => {
+    const sel = deleteSelections.has(it.wid);
+    html += `<button onclick="toggleDeleteItem('${it.wid}')" style="
+      padding:8px 14px;border-radius:8px;font-size:11px;cursor:pointer;
+      font-family:'Space Mono',monospace;transition:all .2s;
+      border:1px solid ${sel ? '#EF476F' : '#2A2A3A'};
+      background:${sel ? '#EF476F20' : '#14141F'};
+      color:${sel ? '#EF476F' : '#9B9BAB'}">
+      ${sel ? '☑' : '☐'} ${it.monthName} ${it.year} · ${it.period}
+      <span style="opacity:.6">(${it.storeCount} store · ${it.totalOrd} ordini)</span>
+    </button>`;
+  });
+  
+  el.innerHTML = html || '<span style="color:#6B6B7B;font-size:12px">Nessuna settimana caricata</span>';
+}
+
+function toggleDeleteItem(wid){
+  if(deleteSelections.has(wid)) deleteSelections.delete(wid);
+  else deleteSelections.add(wid);
+  renderDeleteList();
+  const btn = document.getElementById('btnConfirmDelete');
+  if(deleteSelections.size > 0){
+    btn.style.display = 'inline-block';
+    btn.textContent = `Elimina ${deleteSelections.size} settiman${deleteSelections.size === 1 ? 'a' : 'e'}`;
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+async function deleteSelected(){
+  if(deleteSelections.size === 0) return;
+  const count = deleteSelections.size;
+  if(!confirm(`Vuoi eliminare ${count} settiman${count===1?'a':'e'}? Questa azione è irreversibile.`)) return;
+  
+  // Delete from WEEKS_DATA
+  for(const wid of deleteSelections){
+    // Delete from Supabase
+    if(window.supabase){
+      try{
+        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const keys = Object.keys(WEEKS_DATA[wid]||{}).map(store => `${wid}__${store}`);
+        for(const key of keys){
+          await sb.from('glovo_invoices').delete().eq('id', key);
+        }
+      }catch(e){console.warn('Delete from DB failed:', e)}
+    }
+    delete WEEKS_DATA[wid];
+  }
+  
+  deleteSelections.clear();
+  document.getElementById('btnConfirmDelete').style.display = 'none';
+  
+  // Reset to first available week
+  const remaining = Object.keys(WEEKS_DATA);
+  activeWeek = remaining.length > 0 ? remaining[0] : 'w2';
+  activeStore = 'Tutti';
+  activeTab = 'overview';
+  
+  rebuildWeeksConfig();
+  renderDeleteList();
+  render();
+  
+  const ss = document.getElementById('syncStatus');
+  if(ss) {ss.textContent = `✓ ${count} settiman${count===1?'a':'e'} eliminat${count===1?'a':'e'}`; ss.style.color='#EF476F';}
+}
+
+async function init(){
+  // Load hardcoded data
+  if(typeof HARDCODED_WEEKS_DATA !== 'undefined'){
+    WEEKS_DATA = JSON.parse(JSON.stringify(HARDCODED_WEEKS_DATA));
+  }
+  rebuildWeeksConfig();
+  render();
+  
+  // Init Supabase
+  try{
+    if(window.supabase && window.supabase.createClient){
+      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      document.getElementById('syncStatus').textContent='⏳ Connessione cloud...';
+      document.getElementById('syncStatus').style.color='#FFBA08';
+      const loaded = await loadFromDB();
+      if(loaded){
+        rebuildWeeksConfig();
+        render();
+      } else {
+        document.getElementById('syncStatus').textContent='✓ Cloud connesso (nessun dato salvato)';
+        document.getElementById('syncStatus').style.color='#06D6A0';
+      }
+    } else {
+      document.getElementById('syncStatus').textContent='⚠ Cloud offline (funziona comunque)';
+      document.getElementById('syncStatus').style.color='#FFBA08';
+    }
+  }catch(e){
+    console.warn('Supabase init failed:',e);
+    document.getElementById('syncStatus').textContent='⚠ Cloud offline (funziona comunque)';
+    document.getElementById('syncStatus').style.color='#FFBA08';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
