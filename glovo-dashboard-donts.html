@@ -773,13 +773,22 @@ function getCustomRangeData(fromStr, toStr){
       const storeData = WEEKS_DATA[wid]?.[storeName];
       if(!storeData) return;
       
-      // Parse week start date from period
-      const period = storeData.period || "";
-      const pm = period.match(/(\d{2})\/(\d{2})/);
-      if(!pm) return;
-      const ym = period.match(/(\d{4})/);
-      const yr = ym ? parseInt(ym[1]) : 2026;
-      const weekStartDate = new Date(yr, parseInt(pm[2])-1, parseInt(pm[1]));
+      // Parse week start date from weekId (w_YYYYMMDD = Monday of week)
+      // This is more reliable than period which may include outlier dates
+      let weekStartDate;
+      const widMatch = wid.match(/w_(\d{4})(\d{2})(\d{2})/);
+      if(widMatch){
+        weekStartDate = new Date(parseInt(widMatch[1]), parseInt(widMatch[2])-1, parseInt(widMatch[3]));
+      } else {
+        // Fallback: parse from period
+        const period = storeData.period || "";
+        const pm = period.match(/(\d{2})\/(\d{2})/);
+        if(!pm) return;
+        const ym = period.match(/(\d{4})/);
+        const yr = ym ? parseInt(ym[1]) : 2026;
+        weekStartDate = new Date(yr, parseInt(pm[2])-1, parseInt(pm[1]));
+      }
+      const yr = weekStartDate.getFullYear();
       
       // Check each day in the week's daily data
       const dayMap = {"Lun":0,"Mar":1,"Mer":2,"Gio":3,"Ven":4,"Sab":5,"Dom":6,"Dom*":6};
