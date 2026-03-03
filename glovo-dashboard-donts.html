@@ -930,9 +930,33 @@ function rebuildWeeksConfig(){
     const ym = period.match(/(\d{4})/);
     if(ym) year=parseInt(ym[1]);
     else {
-      // Extract year from weekId (format: w_YYYYMMDD)
       const wm = wid.match(/w_(\d{4})/);
       if(wm) year=parseInt(wm[1]);
+    }
+    // For cross-month weeks (e.g. 26/01-01/02), detect both months from period
+    // and assign to the month with more days
+    const allDates = period.match(/(\d{2})\/(\d{2})/g);
+    if(allDates && allDates.length >= 2){
+      const firstM = parseInt(allDates[0].split('/')[1]);
+      const lastM = parseInt(allDates[allDates.length-1].split('/')[1]);
+      if(firstM !== lastM){
+        // Cross-month week: calculate which month has more days
+        const firstD = parseInt(allDates[0].split('/')[0]);
+        const lastD = parseInt(allDates[allDates.length-1].split('/')[0]);
+        // Days in first month (from firstD to end of month)
+        const daysInFirstMonth = new Date(year, firstM, 0).getDate() - firstD + 1;
+        // Days in second month (from 1 to lastD)
+        const daysInSecondMonth = lastD;
+        if(daysInSecondMonth > daysInFirstMonth){
+          month = lastM;
+          day = 1; // start of second month for sorting
+        }
+      }
+    }
+    // Also try weekId for month if period is ambiguous
+    if(!m){
+      const wm2 = wid.match(/w_\d{4}(\d{2})(\d{2})/);
+      if(wm2){ month=parseInt(wm2[1]); day=parseInt(wm2[2]); }
     }
     weekInfos.push({id:wid, period, day, month, year, sortKey: year*10000+month*100+day});
   });
